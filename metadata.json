@@ -1,0 +1,6 @@
+{
+  "name": "COUP — Tabletop Digital Companion",
+  "description": "2–6 Player Tabletop Digital Companion for COUP with fast multi-broker P2P + WebRTC networking, cookie session persistence, auto-reconnect, and card privacy shield.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

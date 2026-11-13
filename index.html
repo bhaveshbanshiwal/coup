@@ -1,0 +1,3172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#090b10" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>COUP — Tabletop Digital Companion</title>
+  <meta name="description" content="2–6 Player Tabletop Digital Companion for COUP with fast multi-broker P2P + WebRTC networking, cookie session persistence, auto-reconnect, and card privacy shield." />
+  <meta property="og:title" content="COUP — Tabletop Digital Companion" />
+  <meta property="og:description" content="2–6 Player Tabletop Digital Companion for COUP with fast multi-broker P2P + WebRTC networking, cookie session persistence, auto-reconnect, and card privacy shield." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Paho MQTT over Secure WebSocket for Instant Cross-Device P2P Multiplayer (Zero-NAT issues) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+  <!-- PeerJS WebRTC Parallel Fallback -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <!-- Google Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #090b10;
+      --bg-panel: #121621;
+      --bg-card: #1a2030;
+      --border-gold: #c9a24d;
+      --border-subtle: rgba(201, 162, 77, 0.25);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent-gold: #f59e0b;
+      --accent-crimson: #e11d48;
+      --accent-emerald: #10b981;
+      --sq-radius: 4px;
+      --card-radius: 6px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 0%, #1c192b 0%, var(--bg-deep) 75%);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      height: 100dvh;
+      max-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    body.lobby-mode {
+      overflow-y: auto;
+      height: auto;
+      min-height: 100dvh;
+    }
+
+    /* COMPACT HEADER */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4rem 0.7rem;
+      background: rgba(9, 11, 16, 0.96);
+      border-bottom: 1px solid var(--border-subtle);
+      z-index: 50;
+      flex-shrink: 0;
+    }
+
+    .brand-logo {
+      font-family: 'Cinzel', serif;
+      font-size: 1.12rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      background: linear-gradient(135deg, #fff 0%, #f59e0b 55%, #b45309 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-sub {
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-left: 0.4rem;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* SQUARISH BUTTONS */
+    .btn {
+      padding: 0.4rem 0.68rem;
+      border-radius: var(--sq-radius);
+      font-weight: 600;
+      font-size: 0.78rem;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: var(--bg-card);
+      color: var(--text-main);
+      transition: all 0.14s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.28rem;
+      white-space: nowrap;
+    }
+
+    .btn:hover:not(:disabled) {
+      border-color: var(--border-gold);
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+      border-color: #fbbf24;
+      color: #fff;
+    }
+
+    .btn-crimson {
+      background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%);
+      border-color: #fb7185;
+      color: #fff;
+    }
+
+    .btn-emerald {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      border-color: #34d399;
+      color: #fff;
+    }
+
+    main {
+      flex: 1;
+      max-width: 960px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0.42rem 0.52rem;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    body.lobby-mode main {
+      overflow: visible;
+      padding: 0.75rem;
+    }
+
+    /* LOBBY */
+    .lobby-grid {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 0.9rem;
+    }
+
+    @media (max-width: 760px) {
+      .lobby-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .box-showcase {
+        display: none !important;
+      }
+    }
+
+    .panel {
+      background: rgba(18, 22, 33, 0.94);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--sq-radius);
+      padding: 0.85rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .box-showcase {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .box-cover-wrapper {
+      width: 170px;
+      height: 230px;
+      border-radius: var(--card-radius);
+      overflow: hidden;
+      border: 2px solid var(--border-gold);
+      background: #1a1528;
+    }
+
+    .box-cover-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .input-group {
+      margin-bottom: 0.65rem;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 0.52rem 0.72rem;
+      background: #090b10;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: var(--sq-radius);
+      color: #fff;
+      font-size: 0.88rem;
+      font-family: inherit;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent-gold);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .mode-tab {
+      flex: 1;
+      padding: 0.52rem;
+      text-align: center;
+      background: #090b10;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--sq-radius);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.78rem;
+    }
+
+    .mode-tab.active {
+      border-color: var(--accent-gold);
+      background: rgba(245, 158, 11, 0.14);
+      color: #fbbf24;
+    }
+
+    .room-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fbbf24;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px dashed #fbbf24;
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--sq-radius);
+      letter-spacing: 0.14em;
+      display: inline-block;
+    }
+
+    .lobby-players-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.45rem;
+      margin: 0.65rem 0;
+    }
+
+    .lobby-seat {
+      background: #090b10;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--sq-radius);
+      padding: 0.48rem 0.58rem;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .lobby-seat.occupied {
+      border-color: rgba(245, 158, 11, 0.5);
+      background: rgba(245, 158, 11, 0.06);
+    }
+
+    .seat-num {
+      width: 22px;
+      height: 22px;
+      border-radius: var(--sq-radius);
+      background: #1f2937;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.74rem;
+      color: var(--accent-gold);
+    }
+
+    /* ================= ACTIVE GAME SCREEN ================= */
+    #gameScreen {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      gap: 0.38rem;
+      overflow-y: auto;
+      overflow-x: hidden;
+      height: 100%;
+    }
+
+    /* RED TOP TURN BAR */
+    .turn-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(90deg, #7f1d1d 0%, #be123c 50%, #7f1d1d 100%);
+      border: 1px solid #fb7185;
+      border-radius: var(--sq-radius);
+      padding: 0.36rem 0.68rem;
+      flex-shrink: 0;
+      box-shadow: 0 2px 10px rgba(225, 29, 72, 0.35);
+    }
+
+    .turn-top-bar.my-turn-active {
+      background: linear-gradient(90deg, #991b1b 0%, #e11d48 50%, #991b1b 100%);
+      border-color: #fda4af;
+      box-shadow: 0 0 12px rgba(244, 63, 94, 0.65);
+    }
+
+    .turn-indicator-left {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .turn-dot {
+      width: 9px;
+      height: 9px;
+      background: #fecdd3;
+      border-radius: 2px;
+      display: inline-block;
+      box-shadow: 0 0 6px #fff;
+      flex-shrink: 0;
+    }
+
+    .court-mini-stats {
+      display: flex;
+      align-items: center;
+      gap: 0.68rem;
+      font-size: 0.88rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: #ffe4e6;
+      flex-shrink: 0;
+    }
+
+    .court-mini-stats .stat-icon {
+      font-size: 0.98rem;
+    }
+
+    .court-mini-stats strong {
+      font-size: 0.98rem;
+      font-weight: 800;
+      color: #fde047;
+    }
+
+    /* ALERT / CHALLENGE / BLOCK BANNER */
+    .phase-banner {
+      background: rgba(225, 29, 72, 0.18);
+      border: 1px solid #f43f5e;
+      border-radius: var(--sq-radius);
+      padding: 0.45rem 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.36rem;
+      flex-shrink: 0;
+    }
+
+    .phase-title {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: #fda4af;
+      line-height: 1.25;
+    }
+
+    .response-controls {
+      display: flex;
+      gap: 0.38rem;
+      flex-wrap: wrap;
+      align-items: stretch;
+      width: 100%;
+    }
+
+    /* RESPONSE BUTTONS SAME SIZE AS ACTION BUTTONS */
+    .response-btn {
+      min-height: 54px;
+      min-width: 104px;
+      padding: 0.45rem 0.72rem;
+      border-radius: var(--sq-radius);
+      font-weight: 700;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.14rem;
+      text-align: center;
+      transition: all 0.14s ease;
+      line-height: 1.15;
+    }
+
+    /* HOST RESOLVE BUTTON MOVED TO THE FAR RIGHT TO AVOID ACCIDENTAL CLICKS */
+    .response-btn-resolve {
+      margin-left: auto;
+      background: #171e2e;
+      border: 1px dashed rgba(251, 191, 36, 0.55);
+      color: #fde68a;
+    }
+
+    .response-btn-resolve:hover:not(:disabled) {
+      border-color: #fbbf24;
+      background: #1e283c;
+    }
+
+    /* NO-BLUFF CARD REVEAL BANNER */
+    .proof-banner {
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid #10b981;
+      border-radius: var(--sq-radius);
+      padding: 0.4rem 0.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.55rem;
+      flex-shrink: 0;
+    }
+
+    .proof-card-thumb {
+      width: 42px;
+      height: 58px;
+      border-radius: 3px;
+      object-fit: contain;
+      background: #10141f;
+      border: 1px solid #34d399;
+      flex-shrink: 0;
+    }
+
+    /* COMPACT PLAYER PODS ROW (LARGER COINS/CARDS ICONS & FONTS) */
+    #compactSeatsGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+      gap: 0.34rem;
+      flex-shrink: 0;
+    }
+
+    .mini-pod {
+      background: #151b29;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--sq-radius);
+      padding: 0.34rem 0.48rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.18rem;
+    }
+
+    .mini-pod.active-turn {
+      border-color: #f43f5e;
+      background: rgba(225, 29, 72, 0.16);
+    }
+
+    .mini-pod.eliminated {
+      opacity: 0.38;
+      filter: grayscale(0.85);
+    }
+
+    .mini-pod-stats {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.86rem;
+      color: #d1d5db;
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .mini-pod-stats .pod-icon {
+      font-size: 0.96rem;
+      line-height: 1;
+    }
+
+    .mini-pod-stats .pod-num {
+      font-weight: 800;
+      font-size: 0.96rem;
+      color: #f9fafb;
+    }
+
+    .mini-pod-stats .pod-coin-num {
+      font-weight: 800;
+      font-size: 1rem;
+      color: #fde047;
+    }
+
+    .badge {
+      font-size: 0.56rem;
+      padding: 0.1rem 0.28rem;
+      border-radius: 2px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .badge-turn {
+      background: #e11d48;
+      color: #fff;
+    }
+
+    .badge-you {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    /* PEEK BUTTON & FULL VERTICAL INFLUENCE CARDS */
+    #bigPeekBtn {
+      width: 100%;
+      min-height: 44px;
+      padding: 0.48rem 0.65rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      justify-content: center;
+      border-width: 1px;
+      flex-shrink: 0;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.25;
+    }
+
+    #bigPeekBtn.loss-alert-peek {
+      background: linear-gradient(135deg, #be123c 0%, #881337 100%) !important;
+      border: 2px solid #fda4af !important;
+      color: #fff !important;
+      box-shadow: 0 0 14px rgba(244, 63, 94, 0.55);
+    }
+
+    .cards-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 156px));
+      justify-content: center;
+      gap: 0.65rem;
+      flex-shrink: 0;
+      margin: 0.1rem auto;
+      width: 100%;
+    }
+
+    /* FULL VERTICAL PORTRAIT CARDS (5:7 RATIO, UNCROPPED) */
+    .influence-card {
+      border-radius: var(--card-radius);
+      aspect-ratio: 5 / 7;
+      width: 100%;
+      max-height: 218px;
+      border: 1.5px solid rgba(255, 255, 255, 0.24);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      background: #0d111a;
+      margin: 0 auto;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+    }
+
+    .influence-card.selectable {
+      cursor: pointer;
+      border: 2.5px solid #f43f5e;
+      box-shadow: 0 0 14px rgba(244, 63, 94, 0.5);
+    }
+
+    .influence-card.selectable:hover {
+      transform: translateY(-2px);
+      border-color: #fda4af;
+    }
+
+    .influence-card.returned-slot {
+      background: rgba(9, 11, 16, 0.65);
+      border: 1.5px dashed rgba(255, 255, 255, 0.18);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0.4rem;
+    }
+
+    .card-art {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center top;
+      background: #0d111a;
+      z-index: 1;
+    }
+
+    .card-label-bar {
+      position: relative;
+      z-index: 2;
+      background: linear-gradient(to top, rgba(7, 9, 14, 0.96) 45%, rgba(7, 9, 14, 0.78) 85%, transparent);
+      padding: 0.35rem 0.3rem 0.28rem;
+      text-align: center;
+    }
+
+    .card-role-name {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+    }
+
+    .card-role-sub {
+      font-size: 0.64rem;
+      color: #e2e8f0;
+      font-weight: 600;
+    }
+
+    /* ACTION COMMAND DECK (SQUARISH & 1-LINE CHARACTER CLAIMS) */
+    .command-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--sq-radius);
+      padding: 0.48rem;
+      flex-shrink: 0;
+    }
+
+    .action-category-title {
+      font-size: 0.64rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.28rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* 3 General Actions in 1 Row */
+    .general-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.36rem;
+      margin-bottom: 0.42rem;
+    }
+
+    /* 4 Character Claims Strictly in 1 Line */
+    .char-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.36rem;
+    }
+
+    .action-btn {
+      background: #171e2e;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: var(--sq-radius);
+      padding: 0.45rem 0.28rem;
+      text-align: center;
+      cursor: pointer;
+      color: var(--text-main);
+      transition: all 0.12s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.14rem;
+      min-height: 54px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .action-btn:hover:not(:disabled) {
+      border-color: var(--accent-gold);
+      background: #1e283c;
+    }
+
+    .action-btn:disabled {
+      opacity: 0.32;
+      cursor: not-allowed;
+    }
+
+    .action-btn-title {
+      font-weight: 700;
+      font-size: 0.78rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      line-height: 1.15;
+    }
+
+    .action-btn-desc {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .bluff-pill {
+      font-size: 0.54rem;
+      padding: 0.06rem 0.26rem;
+      border-radius: 2px;
+      font-weight: 700;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+
+    .pill-truth {
+      background: rgba(16, 185, 129, 0.22);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.45);
+    }
+
+    .pill-bluff {
+      background: rgba(244, 63, 94, 0.22);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.45);
+    }
+
+    /* COMPACT BOTTOM LOG & CHEAT BAR */
+    .bottom-info-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.28rem;
+      flex: 1;
+      min-height: 60px;
+    }
+
+    .log-box {
+      flex: 1;
+      min-height: 48px;
+      overflow-y: auto;
+      background: #080a0f;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--sq-radius);
+      padding: 0.34rem 0.45rem;
+      font-size: 0.73rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.22rem;
+    }
+
+    .log-entry {
+      padding: 0.2rem 0.38rem;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.025);
+      border-left: 2px solid #4b5563;
+      line-height: 1.26;
+    }
+
+    .log-entry.claim {
+      border-left-color: #f59e0b;
+    }
+
+    .log-entry.challenge {
+      border-left-color: #ef4444;
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    .log-entry.block {
+      border-left-color: #3b82f6;
+    }
+
+    .log-entry.win {
+      border-left-color: #10b981;
+      background: rgba(16, 185, 129, 0.12);
+      font-weight: 600;
+    }
+
+    .micro-ref-bar {
+      font-size: 0.64rem;
+      color: #9ca3af;
+      background: rgba(18, 22, 33, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--sq-radius);
+      padding: 0.26rem 0.45rem;
+      white-space: nowrap;
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+
+    /* MODALS */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 11, 0.85);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 0.75rem;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-gold);
+      border-radius: var(--sq-radius);
+      max-width: 680px;
+      width: 100%;
+      max-height: 90dvh;
+      overflow-y: auto;
+      padding: 0.9rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .rules-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.5rem 0;
+      font-size: 0.76rem;
+    }
+
+    .rules-table th,
+    .rules-table td {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 0.38rem;
+      text-align: left;
+    }
+
+    .rules-table th {
+      background: rgba(201, 162, 77, 0.15);
+      color: #fde047;
+    }
+
+    .perspective-switcher {
+      background: rgba(59, 130, 246, 0.14);
+      border: 1px solid #3b82f6;
+      padding: 0.15rem 0.4rem;
+      border-radius: var(--sq-radius);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.72rem;
+    }
+  </style>
+</head>
+
+<body class="lobby-mode">
+
+  <!-- TOP BAR -->
+  <header>
+    <div style="display:flex; align-items:baseline;">
+      <span class="brand-logo">COUP</span>
+      <span class="brand-sub">2–6P Companion</span>
+    </div>
+
+    <div class="nav-actions">
+      <!-- Local Pass & Play Perspective Switcher -->
+      <div id="localPerspectiveBar" class="perspective-switcher" style="display:none;">
+        <span>👁️</span>
+        <select id="perspectiveSelect" class="input-field" style="padding:0.1rem 0.3rem; width:auto; font-size:0.72rem;"
+          onchange="switchLocalPerspective(this.value)"></select>
+      </div>
+
+      <button class="btn btn-gold" onclick="openModal('rulesModal')">📜 Rules</button>
+      <button id="leaveBtn" class="btn btn-crimson" style="display:none;" onclick="resetToLobby()">🚪 Leave</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ================= LOBBY SCREEN ================= -->
+    <section id="lobbyScreen">
+      <div class="lobby-grid">
+        <div class="panel box-showcase">
+          <div class="box-cover-wrapper">
+            <img id="lobbyBoxImg" alt="Coup Box Cover"
+              onerror="handleImageFallback(this, 'box')" />
+          </div>
+          <div>
+            <h3 style="font-family:'Cinzel',serif; color:#fbbf24; font-size:0.95rem;">Tabletop Mode</h3>
+            <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem; line-height:1.35;">
+              Each player joins on their phone. Start with <strong>0 Coins</strong> and <strong>2 Cards</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 style="font-family:'Cinzel',serif; margin-bottom:0.65rem; font-size:1.08rem;">Join Table (2 to 6 Players)
+          </h2>
+
+          <div class="mode-tabs">
+            <div id="tabOnline" class="mode-tab active" onclick="selectLobbyTab('online')">📱 Multi-Phone P2P</div>
+            <div id="tabLocal" class="mode-tab" onclick="selectLobbyTab('local')">🛋️ Pass & Play</div>
+          </div>
+
+          <!-- ONLINE P2P CONTROLS -->
+          <div id="onlineControls">
+            <div class="input-group">
+              <label>Your Name (Remembered Automatically)</label>
+              <input type="text" id="playerNameInput" class="input-field" placeholder="Enter your name..."
+                maxlength="18" oninput="saveRememberedName(this.value)" />
+            </div>
+
+            <div style="display:flex; gap:0.45rem; flex-wrap:wrap; margin-bottom:0.8rem;">
+              <button class="btn btn-gold" onclick="hostOnlineRoom()">👑 Host Table</button>
+              <div style="display:flex; gap:0.35rem; flex:1; min-width:190px;">
+                <input type="text" id="joinCodeInput" class="input-field" placeholder="4-Digit Code" maxlength="4"
+                  inputmode="numeric" pattern="[0-9]*"
+                  style="letter-spacing:0.15em; font-family:'JetBrains Mono', monospace; font-size:0.95rem; text-align:center; font-weight:700;" />
+                <button class="btn btn-emerald" onclick="joinOnlineRoom()">Join Table</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SINGLE-DEVICE TEST CONTROLS -->
+          <div id="localControls" style="display:none;">
+            <div style="display:flex; gap:0.4rem; margin-bottom:0.75rem; flex-wrap:wrap;">
+              <input type="text" id="localPlayerNameInput" class="input-field" style="flex:1; min-width:140px;"
+                placeholder="Player name..." maxlength="18" />
+              <button class="btn btn-emerald" onclick="addLocalPlayer()">+ Add</button>
+              <button class="btn" onclick="fillDemoPlayers()">⚡ Demo 4P</button>
+            </div>
+          </div>
+
+          <!-- WAITING ROOM SEATS -->
+          <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:0.75rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem;">
+              <div>
+                <span style="font-size:0.74rem; color:var(--text-muted); text-transform:uppercase;">Seated (<span
+                    id="seatCountText">0</span>/6):</span>
+                <div id="roomCodeDisplay" style="display:none; margin-top:0.25rem;">
+                  <span style="font-size:0.78rem; color:var(--text-muted);">Code: </span>
+                  <span id="roomCodeText" class="room-badge" style="cursor:pointer;" title="Tap to copy code"
+                    onclick="copyTableCode()">------</span>
+                  <button id="shareLinkBtn" class="btn"
+                    style="padding:0.25rem 0.5rem; font-size:0.72rem; margin-left:0.3rem;" onclick="copyTableLink()">📋
+                    Link</button>
+                </div>
+              </div>
+              <button id="startGameBtn" class="btn btn-gold" onclick="startGame()" disabled>🎴 Deal & Start</button>
+            </div>
+
+            <div id="lobbySeatsContainer" class="lobby-players-list"></div>
+            <p id="networkStatusText" style="font-size:0.76rem; color:#9ca3af; margin-top:0.25rem;"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ACTIVE GAME SCREEN ================= -->
+    <section id="gameScreen">
+      <!-- Slim Red Top Turn Interface -->
+      <div id="turnTopBar" class="turn-top-bar">
+        <div class="turn-indicator-left">
+          <span class="turn-dot"></span>
+          <span id="turnStatusHeader">WAITING...</span>
+        </div>
+        <div class="court-mini-stats">
+          <span><span class="stat-icon">🪙</span> <strong id="treasuryCoinsText">50</strong></span>
+          <span><span class="stat-icon">🎴</span> <strong id="courtDeckCountText">15</strong></span>
+        </div>
+      </div>
+
+      <!-- No-Bluff Proof Reveal Banner -->
+      <div id="proofBanner" class="proof-banner" style="display:none;">
+        <div style="display:flex; align-items:center; gap:0.55rem;">
+          <img id="proofCardImg" class="proof-card-thumb" src="" alt="Revealed Card" />
+          <div>
+            <div id="proofBannerTitle" style="font-weight:800; font-size:0.8rem; color:#34d399;"></div>
+            <div id="proofBannerSub" style="font-size:0.7rem; color:#d1fae5;"></div>
+          </div>
+        </div>
+        <button class="btn" onclick="dismissProofBanner()">✓ OK</button>
+      </div>
+
+      <!-- Dynamic Challenge / Block / Quiet Card Return Banner -->
+      <div id="phaseBanner" class="phase-banner" style="display:none;">
+        <div id="phaseBannerTitle" class="phase-title"></div>
+        <div id="phaseBannerSub" style="font-size:0.72rem; color:#fecdd3;"></div>
+        <div id="phaseBannerButtons" class="response-controls"></div>
+      </div>
+
+      <!-- Compact Player List (Larger Coins & Card Counts) -->
+      <div id="compactSeatsGrid"></div>
+
+      <!-- Squarish Peek Button for My Cards (With Anti-Peek Layer for Coup/Loss) -->
+      <button id="bigPeekBtn" class="btn" onclick="toggleCardPrivacy()">
+        🙈 SECRET CARDS HIDDEN (TAP TO PEEK)
+      </button>
+
+      <!-- My Dedicated Full Vertical Card Area (Collapsible) -->
+      <div id="myCardsArea" class="cards-row" style="display:none;"></div>
+
+      <!-- Turn Actions & Single-Line Character Claims Panel -->
+      <div class="command-panel">
+        <div class="action-category-title">
+          <span>General Actions</span>
+          <span id="mandatoryCoupWarning" style="display:none; color:#fb7185; font-size:0.68rem; font-weight:700;">
+            ⚠️ 10+ Coins: Must Coup!
+          </span>
+        </div>
+        <div class="general-actions-grid" id="generalActionsGrid"></div>
+
+        <div class="action-category-title" style="margin-top:0.15rem;">
+          <span>Character Claims (1-Line • Truth or Bluff)</span>
+        </div>
+        <div class="char-actions-grid" id="characterActionsGrid"></div>
+      </div>
+
+      <!-- Compact Bottom Table Log & Micro Cheat Bar -->
+      <div class="bottom-info-row">
+        <div id="gameLogContainer" class="log-box"></div>
+        <div class="micro-ref-bar">
+          <strong style="color:#c084fc;">Duke:</strong> +3 / Blk Aid &nbsp;•&nbsp;
+          <strong style="color:#f87171;">Assassin:</strong> -3 Kill &nbsp;•&nbsp;
+          <strong style="color:#60a5fa;">Captain:</strong> Steal 2 / Blk Steal &nbsp;•&nbsp;
+          <strong style="color:#34d399;">Ambass:</strong> Swap 2 / Blk Steal &nbsp;•&nbsp;
+          <strong style="color:#f472b6;">Contessa:</strong> Blk Kill
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= MODAL 1: OFFICIAL + TABLETOP RULES ================= -->
+  <div id="rulesModal" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 style="font-family:'Cinzel',serif; color:#fbbf24; font-size:1.05rem;">📜 COUP Rules & Deck Mechanics</h2>
+        <button class="btn" onclick="closeModal('rulesModal')">✕ Close</button>
+      </div>
+
+      <div
+        style="font-size:0.8rem; line-height:1.48; color:#e5e7eb; display:flex; flex-direction:column; gap:0.65rem;">
+        <div>
+          <h3 style="color:#fbbf24; margin-bottom:0.15rem;">1. Setup & Ordered Deck (2–6 Players)</h3>
+          <p>
+            The Court Deck has <strong>15 Cards</strong> (3 each of Duke, Assassin, Captain, Ambassador, Contessa).
+            Every player starts with <strong>0 Coins</strong> and <strong>2 Cards</strong>.
+            Cards drawn come from the <strong>TOP</strong>, and returned cards go to the <strong>BOTTOM</strong>.
+          </p>
+        </div>
+
+        <div>
+          <h3 style="color:#fbbf24; margin-bottom:0.15rem;">2. Actions & Counteractions</h3>
+          <table class="rules-table">
+            <thead>
+              <tr>
+                <th>Character / Action</th>
+                <th>Action Effect</th>
+                <th>Block</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Income</strong></td>
+                <td>+1 Coin</td>
+                <td><em>Unblockable</em></td>
+              </tr>
+              <tr>
+                <td><strong>Foreign Aid</strong></td>
+                <td>+2 Coins</td>
+                <td>Blocked by <strong>Duke</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Coup</strong></td>
+                <td>-7 Coins, target loses 1 card</td>
+                <td><em>Unblockable</em></td>
+              </tr>
+              <tr>
+                <td><strong style="color:#c084fc;">Duke — Tax</strong></td>
+                <td>+3 Coins</td>
+                <td>Blocks Foreign Aid</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#f87171;">Assassin — Kill</strong></td>
+                <td>-3 Coins (never refunded if caught bluffing), target loses 1 card</td>
+                <td>Target can Call Bluff on Assassin OR Block (Contessa)</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#60a5fa;">Captain — Steal</strong></td>
+                <td>Steal up to 2 Coins</td>
+                <td>Target just taps Block (holds Captain or Ambassador)</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#34d399;">Ambassador — Swap</strong></td>
+                <td>Draw 2 from Top, return 2 to Bottom</td>
+                <td>Blocks Steal</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 2: TARGET SELECTION ================= -->
+  <div id="targetModal" class="modal-backdrop">
+    <div class="modal-content" style="max-width:360px;">
+      <div class="modal-header">
+        <h3 style="font-family:'Cinzel',serif; color:#fbbf24; font-size:0.95rem;">Select Target Player</h3>
+        <button class="btn" onclick="closeModal('targetModal')">✕ Cancel</button>
+      </div>
+      <div id="targetPlayersList" style="display:flex; flex-direction:column; gap:0.4rem;"></div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 3: AMBASSADOR EXCHANGE ================= -->
+  <div id="exchangeModal" class="modal-backdrop">
+    <div class="modal-content" style="max-width:520px;">
+      <div class="modal-header">
+        <h3 style="font-family:'Cinzel',serif; color:#34d399; font-size:0.95rem;">🟢 Ambassador Exchange</h3>
+      </div>
+      <p id="exchangeInstructionText" style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.65rem;"></p>
+      <div id="exchangeCardsContainer"
+        style="display:grid; grid-template-columns:repeat(2, minmax(0, 156px)); justify-content:center; gap:0.6rem; margin-bottom:0.75rem;">
+      </div>
+      <button id="confirmExchangeBtn" class="btn btn-emerald" style="width:100%; padding:0.58rem;"
+        onclick="submitAmbassadorExchange()" disabled>
+        Confirm Cards to Keep
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= GAME ENGINE & NETWORKING SCRIPT ================= -->
+  <script>
+    /*************************************************************************
+     * 0. COOKIE & LOCALSTORAGE PERSISTENCE (GITHUB PAGES STATIC COMPATIBLE)
+     *************************************************************************/
+    function setPersistentValue(key, value, days = 365) {
+      try {
+        const expires = new Date(Date.now() + days * 864e5).toUTCString();
+        document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+      } catch (e) { }
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) { }
+    }
+
+    function getPersistentValue(key) {
+      try {
+        const cookies = document.cookie ? document.cookie.split('; ') : [];
+        const prefix = encodeURIComponent(key) + '=';
+        for (let i = 0; i < cookies.length; i++) {
+          if (cookies[i].indexOf(prefix) === 0) {
+            return decodeURIComponent(cookies[i].substring(prefix.length));
+          }
+        }
+      } catch (e) { }
+      try {
+        return localStorage.getItem(key) || '';
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function removePersistentValue(key) {
+      try {
+        document.cookie = `${encodeURIComponent(key)}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
+      } catch (e) { }
+      try {
+        localStorage.removeItem(key);
+      } catch (e) { }
+    }
+
+    function saveRememberedName(name) {
+      const trimmed = (name || '').trim();
+      if (trimmed) {
+        setPersistentValue('coup_username', trimmed, 365);
+      }
+    }
+
+    function getOrCreatePersistentPlayerId() {
+      let savedId = getPersistentValue('coup_player_id');
+      if (!savedId || !savedId.startsWith('p_')) {
+        savedId = 'p_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36).slice(-4);
+        setPersistentValue('coup_player_id', savedId, 365);
+      }
+      return savedId;
+    }
+
+    function saveSessionSnapshot() {
+      if (gameMode !== 'online' || !currentRoomCode) return;
+      setPersistentValue('coup_room_code', currentRoomCode, 2);
+      setPersistentValue('coup_role', isHost ? 'host' : 'client', 2);
+      try {
+        const payload = JSON.stringify({
+          roomCode: currentRoomCode,
+          isHost,
+          myPlayerId,
+          lobbyPlayers,
+          gameState,
+          savedAt: Date.now()
+        });
+        localStorage.setItem('coup_table_snapshot', payload);
+      } catch (e) { }
+    }
+
+    function loadSessionSnapshot() {
+      try {
+        const raw = localStorage.getItem('coup_table_snapshot');
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (Date.now() - (parsed.savedAt || 0) > 12 * 3600 * 1000) {
+          clearSessionSnapshot();
+          return null;
+        }
+        return parsed;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function clearSessionSnapshot() {
+      removePersistentValue('coup_room_code');
+      removePersistentValue('coup_role');
+      try {
+        localStorage.removeItem('coup_table_snapshot');
+      } catch (e) { }
+    }
+
+    /*************************************************************************
+     * 1. ROLES & IMAGE FOLDER WIRING
+     *************************************************************************/
+    const ROLES = {
+      Duke: { name: 'Duke', color: '#a855f7', file: 'images/duke.jpg' },
+      Assassin: { name: 'Assassin', color: '#ef4444', file: 'images/assassin.jpg' },
+      Captain: { name: 'Captain', color: '#3b82f6', file: 'images/captain.jpg' },
+      Ambassador: { name: 'Ambassador', color: '#10b981', file: 'images/ambassador.jpg' },
+      Contessa: { name: 'Contessa', color: '#ec4899', file: 'images/contessa.jpg' },
+      Hidden: { name: 'Hidden', color: '#cbd5e1', file: 'images/back.jpg' }
+    };
+
+    function getCardImageSrc(role) {
+      if (ROLES[role]) return ROLES[role].file;
+      return 'images/back.jpg';
+    }
+
+    function handleImageFallback(imgEl, roleKey) {
+      const currentSrc = imgEl.getAttribute('src') || '';
+      if (currentSrc.endsWith('.jpg')) {
+        imgEl.src = currentSrc.replace('.jpg', '.png');
+        return;
+      }
+      imgEl.onerror = null;
+      imgEl.src = getBuiltInSvgDataUri(roleKey);
+    }
+
+    function getBuiltInSvgDataUri(role) {
+      const svgs = {
+        box: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420"><rect width="300" height="420" rx="8" fill="#1e1b2e"/><circle cx="150" cy="185" r="82" fill="#831843" stroke="#f472b6" stroke-width="3"/><path d="M72 330 L102 195 L135 275 L165 275 L198 195 L228 330 Z" fill="#be123c"/><circle cx="150" cy="180" r="38" fill="#fbcfe8"/><text x="150" y="75" text-anchor="middle" fill="#fff" font-family="Cinzel,serif" font-weight="900" font-size="44" letter-spacing="8">COUP</text></svg>`,
+        Duke: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420"><rect width="300" height="420" rx="8" fill="#2e1065"/><circle cx="150" cy="145" r="76" fill="#581c87" stroke="#c084fc" stroke-width="3"/><path d="M90 290 C90 215, 210 215, 210 290 Z" fill="#7e22ce"/><circle cx="150" cy="135" r="36" fill="#d8b4fe"/><circle cx="95" cy="70" r="15" fill="#eab308"/><circle cx="205" cy="70" r="15" fill="#eab308"/><circle cx="150" cy="52" r="15" fill="#eab308"/></svg>`,
+        Assassin: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420"><rect width="300" height="420" rx="8" fill="#450a0a"/><circle cx="150" cy="145" r="76" fill="#7f1d1d" stroke="#f87171" stroke-width="3"/><path d="M85 290 L110 185 L190 185 L215 290 Z" fill="#1f2937"/><path d="M105 155 L150 80 L195 155 L180 195 L120 195 Z" fill="#111827" stroke="#f87171" stroke-width="2"/><rect x="122" y="138" width="56" height="10" rx="5" fill="#ef4444"/></svg>`,
+        Captain: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420"><rect width="300" height="420" rx="8" fill="#172554"/><circle cx="150" cy="145" r="76" fill="#1e3a8a" stroke="#60a5fa" stroke-width="3"/><path d="M80 290 C85 215, 215 215, 220 290 Z" fill="#1d4ed8"/><circle cx="150" cy="142" r="35" fill="#bfdbfe"/><polygon points="108,118 192,118 178,92 122,92" fill="#1e40af" stroke="#facc15" stroke-width="2"/></svg>`,
+        Ambassador: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420"><rect width="300" height="420" rx="8" fill="#064e3b"/><circle cx="150" cy="145" r="76" fill="#065f46" stroke="#34d399" stroke-width="3"/><path d="M90 290 C95 215, 205 215, 210 290 Z" fill="#047857"/><circle cx="150" cy="138" r="35" fill="#a7f3d0"/><rect x="92" y="185" width="32" height="46" rx="5" fill="#10b981" stroke="#fff" stroke-width="2"/><rect x="178" y="178" width="32" height="46" rx="5" fill="#10b981" stroke="#fff" stroke-width="2"/></svg>`,
+        Contessa: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420"><rect width="300" height="420" rx="8" fill="#831843"/><circle cx="150" cy="145" r="76" fill="#9d174d" stroke="#f472b6" stroke-width="3"/><path d="M72 290 L102 155 L135 235 L165 235 L198 155 L228 290 Z" fill="#be123c"/><circle cx="150" cy="140" r="36" fill="#fbcfe8"/></svg>`,
+        Hidden: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420"><rect width="300" height="420" rx="8" fill="#111827"/><rect x="18" y="18" width="264" height="384" rx="8" fill="none" stroke="#c9a24d" stroke-width="2" stroke-dasharray="8,6"/><circle cx="150" cy="210" r="52" fill="none" stroke="#c9a24d" stroke-width="2"/><text x="150" y="218" text-anchor="middle" fill="#c9a24d" font-family="Cinzel,serif" font-weight="900" font-size="24" letter-spacing="4">COUP</text></svg>`
+      };
+      return 'data:image/svg+xml;utf8,' + encodeURIComponent(svgs[role] || svgs.Hidden);
+    }
+
+    /*************************************************************************
+     * 2. STATE & PARALLEL MULTI-BROKER + PEERJS P2P NETWORKING
+     *************************************************************************/
+    let gameMode = 'online'; // 'online' | 'local'
+    let isHost = false;
+    let myPlayerId = getOrCreatePersistentPlayerId();
+    let hideMyCards = true;
+    let lastSeenLossSignature = null;
+
+    let lobbyPlayers = [];
+    let gameState = {
+      started: false,
+      treasury: 50,
+      deck: [],
+      players: [],
+      turnIndex: 0,
+      phase: 'TURN_DECISION',
+      pendingAction: null,
+      lossQueue: [],
+      exchangeData: null,
+      proofReveal: null,
+      logs: []
+    };
+
+    // Fast public WSS MQTT brokers raced simultaneously in parallel
+    const MQTT_BROKERS = [
+      { host: 'broker.emqx.io', port: 8084, path: '/mqtt' },
+      { host: 'broker.hivemq.com', port: 8884, path: '/mqtt' },
+      { host: 'test.mosquitto.org', port: 8081, path: '/' }
+    ];
+
+    let mqttClients = [];
+    let peerInstance = null;
+    let hostPeerConns = {}; // playerId -> DataConnection
+    let clientPeerConn = null;
+    let currentRoomCode = '';
+    let activeMessageHandler = null;
+    let activeSubscriptions = [];
+    let joinRetryTimer = null;
+    let heartbeatTimer = null;
+    const seenMessageIds = new Set();
+
+    function makeMsgId() {
+      return Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 8);
+    }
+
+    function isDuplicateMsg(msgId) {
+      if (!msgId) return false;
+      if (seenMessageIds.has(msgId)) return true;
+      seenMessageIds.add(msgId);
+      if (seenMessageIds.size > 600) {
+        const first = seenMessageIds.values().next().value;
+        seenMessageIds.delete(first);
+      }
+      return false;
+    }
+
+    function toggleCardPrivacy() {
+      hideMyCards = !hideMyCards;
+      renderGameScreen();
+    }
+
+    function selectLobbyTab(mode) {
+      gameMode = mode;
+      document.getElementById('tabOnline').classList.toggle('active', mode === 'online');
+      document.getElementById('tabLocal').classList.toggle('active', mode === 'local');
+      document.getElementById('onlineControls').style.display = mode === 'online' ? 'block' : 'none';
+      document.getElementById('localControls').style.display = mode === 'local' ? 'block' : 'none';
+      if (mode === 'local') {
+        lobbyPlayers = [];
+        renderLobbySeats();
+      } else {
+        renderLobbySeats();
+      }
+    }
+
+    function renderLobbySeats() {
+      const container = document.getElementById('lobbySeatsContainer');
+      container.innerHTML = '';
+      document.getElementById('seatCountText').textContent = lobbyPlayers.length;
+
+      for (let i = 0; i < 6; i++) {
+        const p = lobbyPlayers[i];
+        const seat = document.createElement('div');
+        seat.className = 'lobby-seat' + (p ? ' occupied' : '');
+        const isMe = p && p.id === myPlayerId;
+        const canRemove = p && (gameMode === 'local' || (isHost && !isMe));
+
+        seat.innerHTML = `
+          <div class="seat-num">${i + 1}</div>
+          <div style="font-size:0.82rem; font-weight:${p ? '600' : '400'}; color:${p ? '#fff' : '#6b7280'}; display:flex; align-items:center; gap:0.3rem; flex:1; min-width:0;">
+            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p ? escapeHtml(p.name) : 'Open'}</span>
+            ${isMe ? '<span style="font-size:0.56rem; background:#3b82f6; color:#fff; padding:0.08rem 0.28rem; border-radius:2px; font-weight:700;">YOU</span>' : ''}
+          </div>
+          ${canRemove ? `<button onclick="removeLobbyPlayer('${p.id}')" title="Remove Player" style="background:rgba(225,29,72,0.2); border:1px solid #f43f5e; color:#fda4af; border-radius:3px; width:20px; height:20px; font-size:0.65rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">✕</button>` : ''}
+        `;
+        container.appendChild(seat);
+      }
+
+      const canStart = (gameMode === 'local' || isHost) && lobbyPlayers.length >= 2 && lobbyPlayers.length <= 6;
+      const startBtn = document.getElementById('startGameBtn');
+      startBtn.disabled = !canStart;
+      startBtn.textContent = (!isHost && gameMode === 'online') ? '⏳ Waiting for Host...' : '🎴 Deal & Start';
+    }
+
+    function removeLobbyPlayer(playerId) {
+      if (!isHost && gameMode !== 'local') return;
+      lobbyPlayers = lobbyPlayers.filter(p => p.id !== playerId);
+
+      if (gameMode === 'local' && lobbyPlayers.length > 0) {
+        myPlayerId = lobbyPlayers[0].id;
+      }
+
+      renderLobbySeats();
+      saveSessionSnapshot();
+
+      if (gameMode === 'online' && isHost) {
+        broadcastLobbyState();
+        mqttPublish(`coup_v2/${currentRoomCode}/reply/${playerId}`, {
+          type: 'JOIN_REJECTED',
+          reason: 'Removed from the table by the Host.'
+        });
+      }
+    }
+
+    function addLocalPlayer() {
+      if (lobbyPlayers.length >= 6) return alert('Max 6 players reached!');
+      const input = document.getElementById('localPlayerNameInput');
+      const name = input.value.trim() || `Player ${lobbyPlayers.length + 1}`;
+      lobbyPlayers.push({ id: 'local_' + Date.now() + '_' + lobbyPlayers.length, name });
+      input.value = '';
+      isHost = true;
+      myPlayerId = lobbyPlayers[0].id;
+      renderLobbySeats();
+    }
+
+    function fillDemoPlayers() {
+      lobbyPlayers = [
+        { id: 'p1', name: 'Bhavesh' },
+        { id: 'p2', name: 'Aarav' },
+        { id: 'p3', name: 'Priya' },
+        { id: 'p4', name: 'Vikram' }
+      ];
+      isHost = true;
+      myPlayerId = 'p1';
+      renderLobbySeats();
+    }
+
+    function generateRoomCode() {
+      return String(Math.floor(1000 + Math.random() * 9000));
+    }
+
+    function cleanupTransports() {
+      if (joinRetryTimer) {
+        clearInterval(joinRetryTimer);
+        joinRetryTimer = null;
+      }
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
+      mqttClients.forEach(c => {
+        try { c.disconnect(); } catch (e) { }
+      });
+      mqttClients = [];
+      hostPeerConns = {};
+      clientPeerConn = null;
+      if (peerInstance) {
+        try { peerInstance.destroy(); } catch (e) { }
+        peerInstance = null;
+      }
+    }
+
+    function routeIncomingPacket(destinationName, payloadObj) {
+      if (!payloadObj || typeof payloadObj !== 'object') return;
+      if (payloadObj._msgId && isDuplicateMsg(payloadObj._msgId)) return;
+      if (activeMessageHandler) {
+        activeMessageHandler(destinationName, payloadObj);
+      }
+    }
+
+    // Parallel Multi-Broker + PeerJS WebRTC Engine for Instant Connection (<300ms)
+    function connectParallelTransports(topicsToSubscribe, onMessageCallback, onFirstConnected) {
+      cleanupTransports();
+      activeSubscriptions = topicsToSubscribe || [];
+      activeMessageHandler = onMessageCallback;
+
+      let firstReadyFired = false;
+      function markReady() {
+        if (!firstReadyFired) {
+          firstReadyFired = true;
+          if (onFirstConnected) onFirstConnected();
+        }
+      }
+
+      // 1. Race all WSS MQTT brokers in parallel
+      MQTT_BROKERS.forEach((broker, idx) => {
+        connectSingleBroker(broker, idx, markReady);
+      });
+
+      // 2. Simultaneously initialize PeerJS WebRTC DataChannel mesh
+      setupPeerJsTransport(markReady);
+
+      // 3. Start keepalive / state sync heartbeat
+      heartbeatTimer = setInterval(() => {
+        if (!currentRoomCode || gameMode !== 'online') return;
+        if (isHost) {
+          if (gameState.started) {
+            syncStateToAll();
+          } else {
+            broadcastLobbyState();
+          }
+        } else {
+          // Ensure at least one broker or peer is connected; if not, reconnect transparently
+          const anyMqttConnected = mqttClients.some(c => {
+            try { return c && c.isConnected(); } catch (e) { return false; }
+          });
+          const peerConnected = clientPeerConn && clientPeerConn.open;
+          if (!anyMqttConnected && !peerConnected) {
+            MQTT_BROKERS.forEach((broker, idx) => connectSingleBroker(broker, idx, null));
+            setupPeerJsTransport(null);
+          }
+        }
+      }, 6000);
+    }
+
+    function connectSingleBroker(broker, idx, onReadyCallback) {
+      if (typeof Paho === 'undefined' || !Paho.MQTT) return;
+      const clientId = 'coup_' + (isHost ? 'h_' : 'c_') + myPlayerId + '_' + idx + '_' + Math.random().toString(36).substring(2, 6);
+      let client;
+      try {
+        client = new Paho.MQTT.Client(broker.host, broker.port, broker.path, clientId);
+      } catch (e) {
+        return;
+      }
+
+      client.onConnectionLost = (resp) => {
+        if (resp && resp.errorCode !== 0 && currentRoomCode && gameMode === 'online') {
+          setTimeout(() => {
+            if (currentRoomCode && gameMode === 'online') {
+              connectSingleBroker(broker, idx, null);
+            }
+          }, 1500);
+        }
+      };
+
+      client.onMessageArrived = (message) => {
+        try {
+          const data = JSON.parse(message.payloadString);
+          routeIncomingPacket(message.destinationName, data);
+        } catch (e) { }
+      };
+
+      try {
+        client.connect({
+          useSSL: true,
+          timeout: 3,
+          keepAliveInterval: 20,
+          cleanSession: true,
+          onSuccess: () => {
+            mqttClients.push(client);
+            activeSubscriptions.forEach(topic => {
+              try { client.subscribe(topic, { qos: 0 }); } catch (e) { }
+            });
+            if (onReadyCallback) onReadyCallback();
+          },
+          onFailure: () => {
+            // Other parallel brokers handle connection seamlessly; retry quietly in background
+            setTimeout(() => {
+              if (currentRoomCode && gameMode === 'online' && mqttClients.length === 0) {
+                connectSingleBroker(broker, idx, onReadyCallback);
+              }
+            }, 2500);
+          }
+        });
+      } catch (e) { }
+    }
+
+    function setupPeerJsTransport(onReadyCallback) {
+      if (typeof Peer === 'undefined' || !currentRoomCode) return;
+      const hostPeerId = `coup-v2-room-${currentRoomCode}`;
+
+      try {
+        if (isHost) {
+          const peer = new Peer(hostPeerId, {
+            config: {
+              iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+              ]
+            }
+          });
+          peerInstance = peer;
+
+          peer.on('open', () => {
+            if (onReadyCallback) onReadyCallback();
+          });
+
+          peer.on('connection', (conn) => {
+            conn.on('open', () => {
+              if (conn.metadata && conn.metadata.playerId) {
+                hostPeerConns[conn.metadata.playerId] = conn;
+              }
+            });
+            conn.on('data', (packet) => {
+              if (packet && packet.topic && packet.data) {
+                if (packet.senderId) hostPeerConns[packet.senderId] = conn;
+                routeIncomingPacket(packet.topic, packet.data);
+              }
+            });
+          });
+
+          peer.on('error', () => { });
+        } else {
+          const peer = new Peer({
+            config: {
+              iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+              ]
+            }
+          });
+          peerInstance = peer;
+
+          peer.on('open', () => {
+            const conn = peer.connect(hostPeerId, {
+              reliable: true,
+              metadata: { playerId: myPlayerId }
+            });
+            conn.on('open', () => {
+              clientPeerConn = conn;
+              if (onReadyCallback) onReadyCallback();
+            });
+            conn.on('data', (packet) => {
+              if (packet && packet.topic && packet.data) {
+                routeIncomingPacket(packet.topic, packet.data);
+              }
+            });
+            conn.on('error', () => { });
+          });
+
+          peer.on('error', () => { });
+        }
+      } catch (e) { }
+    }
+
+    function mqttPublish(topic, data, retain = false) {
+      const enriched = Object.assign({}, data, { _msgId: makeMsgId() });
+      seenMessageIds.add(enriched._msgId);
+
+      // 1. Publish across all connected MQTT brokers simultaneously
+      const payloadStr = JSON.stringify(enriched);
+      mqttClients.forEach(client => {
+        try {
+          if (client && client.isConnected()) {
+            const msg = new Paho.MQTT.Message(payloadStr);
+            msg.destinationName = topic;
+            msg.qos = 0;
+            msg.retained = Boolean(retain);
+            client.send(msg);
+          }
+        } catch (e) { }
+      });
+
+      // 2. Simultaneously send over PeerJS WebRTC DataChannel
+      try {
+        if (isHost) {
+          Object.values(hostPeerConns).forEach(conn => {
+            if (conn && conn.open) {
+              conn.send({ topic, data: enriched, senderId: myPlayerId });
+            }
+          });
+        } else if (clientPeerConn && clientPeerConn.open) {
+          clientPeerConn.send({ topic, data: enriched, senderId: myPlayerId });
+        }
+      } catch (e) { }
+    }
+
+    function hostOnlineRoom(restoredRoomCode = null) {
+      const nameInput = document.getElementById('playerNameInput');
+      const name = (nameInput.value.trim() || getPersistentValue('coup_username') || 'Host').slice(0, 18);
+      nameInput.value = name;
+      saveRememberedName(name);
+
+      myPlayerId = getOrCreatePersistentPlayerId();
+      const roomCode = restoredRoomCode || generateRoomCode();
+      currentRoomCode = roomCode;
+      isHost = true;
+
+      if (!restoredRoomCode) {
+        lobbyPlayers = [{ id: myPlayerId, name }];
+        gameState.started = false;
+      }
+
+      document.getElementById('roomCodeDisplay').style.display = 'block';
+      document.getElementById('roomCodeText').textContent = roomCode;
+      document.getElementById('networkStatusText').textContent = '⚡ Opening fast multi-channel table...';
+      renderLobbySeats();
+      saveSessionSnapshot();
+
+      const topics = [
+        `coup_v2/${roomCode}/join`,
+        `coup_v2/${roomCode}/commands`
+      ];
+
+      connectParallelTransports(
+        topics,
+        (destinationName, data) => {
+          if (destinationName === `coup_v2/${roomCode}/join`) {
+            handleHostIncomingJoin(data);
+          } else if (destinationName === `coup_v2/${roomCode}/commands`) {
+            if (data.senderId !== myPlayerId) {
+              processPlayerCommand(data.senderId, data.command);
+            }
+          }
+        },
+        () => {
+          document.getElementById('networkStatusText').textContent = '✅ Table Ready! Code: ' + roomCode;
+          if (gameState.started) {
+            syncStateToAll();
+          } else {
+            broadcastLobbyState();
+          }
+        }
+      );
+    }
+
+    function handleHostIncomingJoin(data) {
+      if (data.type === 'JOIN_REQUEST' || data.type === 'SYNC_REQUEST') {
+        const playerName = (data.name || 'Player').trim().slice(0, 18);
+        const incomingId = data.id;
+
+        // If game is already in progress, allow existing players to reconnect without duplicating!
+        if (gameState.started) {
+          let existingPlayer = gameState.players.find(p => p.id === incomingId);
+          if (!existingPlayer && playerName) {
+            existingPlayer = gameState.players.find(p => p.name.toLowerCase() === playerName.toLowerCase());
+          }
+
+          if (existingPlayer) {
+            const oldId = existingPlayer.id;
+            existingPlayer.id = incomingId;
+            existingPlayer.name = playerName || existingPlayer.name;
+
+            // Keep references updated if player's ID was refreshed
+            if (oldId !== incomingId) {
+              const lp = lobbyPlayers.find(p => p.id === oldId);
+              if (lp) lp.id = incomingId;
+              if (gameState.pendingAction) {
+                if (gameState.pendingAction.actorId === oldId) gameState.pendingAction.actorId = incomingId;
+                if (gameState.pendingAction.targetId === oldId) gameState.pendingAction.targetId = incomingId;
+                if (gameState.pendingAction.blockerId === oldId) gameState.pendingAction.blockerId = incomingId;
+                gameState.pendingAction.passedIds = (gameState.pendingAction.passedIds || []).map(id => id === oldId ? incomingId : id);
+              }
+              gameState.lossQueue.forEach(item => {
+                if (item.playerId === oldId) item.playerId = incomingId;
+              });
+              if (gameState.exchangeData && gameState.exchangeData.playerId === oldId) {
+                gameState.exchangeData.playerId = incomingId;
+              }
+            }
+
+            saveSessionSnapshot();
+            mqttPublish(`coup_v2/${currentRoomCode}/reply/${incomingId}`, {
+              type: 'JOIN_ACCEPTED',
+              lobbyPlayers,
+              roomCode: currentRoomCode
+            });
+            syncStateToAll();
+            return;
+          }
+
+          mqttPublish(`coup_v2/${currentRoomCode}/reply/${incomingId}`, {
+            type: 'JOIN_REJECTED',
+            reason: 'Game is already in progress.'
+          });
+          return;
+        }
+
+        // In Lobby: deduplicate by Player ID OR matching Player Name so reload never duplicates a seat
+        let existingLobbySeat = lobbyPlayers.find(p => p.id === incomingId);
+        if (!existingLobbySeat && playerName) {
+          existingLobbySeat = lobbyPlayers.find(p => p.name.toLowerCase() === playerName.toLowerCase());
+        }
+
+        if (!existingLobbySeat) {
+          if (lobbyPlayers.length >= 6) {
+            mqttPublish(`coup_v2/${currentRoomCode}/reply/${incomingId}`, {
+              type: 'JOIN_REJECTED',
+              reason: 'Table is full (6/6 players).'
+            });
+            return;
+          }
+          lobbyPlayers.push({ id: incomingId, name: playerName });
+        } else {
+          existingLobbySeat.id = incomingId;
+          existingLobbySeat.name = playerName;
+        }
+
+        renderLobbySeats();
+        saveSessionSnapshot();
+
+        mqttPublish(`coup_v2/${currentRoomCode}/reply/${incomingId}`, {
+          type: 'JOIN_ACCEPTED',
+          lobbyPlayers,
+          roomCode: currentRoomCode
+        });
+
+        broadcastLobbyState();
+      }
+    }
+
+    function joinOnlineRoom(isAutoReconnect = false) {
+      const nameInput = document.getElementById('playerNameInput');
+      const name = (nameInput.value.trim() || getPersistentValue('coup_username')).trim();
+      if (!name) {
+        if (!isAutoReconnect) alert('Please enter your name first!');
+        return;
+      }
+      nameInput.value = name;
+      saveRememberedName(name);
+
+      const codeInput = document.getElementById('joinCodeInput');
+      const code = codeInput.value.trim();
+      if (!code || !/^\d{4}$/.test(code)) {
+        if (!isAutoReconnect) alert('Enter a valid 4-digit code!');
+        return;
+      }
+
+      currentRoomCode = code;
+      isHost = false;
+      myPlayerId = getOrCreatePersistentPlayerId();
+      saveSessionSnapshot();
+
+      document.getElementById('networkStatusText').textContent = `⚡ Connecting to Table ${code}...`;
+
+      let isSeated = false;
+      const topics = [
+        `coup_v2/${code}/lobby`,
+        `coup_v2/${code}/reply/${myPlayerId}`,
+        `coup_v2/${code}/state/${myPlayerId}`
+      ];
+
+      function sendJoinPulse() {
+        mqttPublish(`coup_v2/${code}/join`, {
+          type: 'JOIN_REQUEST',
+          id: myPlayerId,
+          name: name
+        });
+      }
+
+      connectParallelTransports(
+        topics,
+        (destinationName, data) => {
+          if (data.type === 'JOIN_ACCEPTED' || data.type === 'LOBBY_UPDATE') {
+            if (Array.isArray(data.lobbyPlayers)) {
+              const amISeated = data.lobbyPlayers.some(
+                p => p.id === myPlayerId || p.name.toLowerCase() === name.toLowerCase()
+              );
+              if (data.type === 'JOIN_ACCEPTED' || amISeated) {
+                isSeated = true;
+                if (joinRetryTimer) {
+                  clearInterval(joinRetryTimer);
+                  joinRetryTimer = null;
+                }
+              }
+              lobbyPlayers = data.lobbyPlayers;
+              document.getElementById('roomCodeDisplay').style.display = 'block';
+              document.getElementById('roomCodeText').textContent = code;
+              if (!gameState.started && isSeated) {
+                document.getElementById('networkStatusText').textContent = `✅ Seated at Table ${code}!`;
+              }
+              renderLobbySeats();
+              saveSessionSnapshot();
+            }
+          } else if (data.type === 'GAME_STATE_SYNC') {
+            isSeated = true;
+            if (joinRetryTimer) {
+              clearInterval(joinRetryTimer);
+              joinRetryTimer = null;
+            }
+            gameState = data.state;
+            saveSessionSnapshot();
+            showActiveGameUI();
+            renderGameScreen();
+          } else if (data.type === 'JOIN_REJECTED') {
+            if (joinRetryTimer) {
+              clearInterval(joinRetryTimer);
+              joinRetryTimer = null;
+            }
+            clearSessionSnapshot();
+            if (!isAutoReconnect) {
+              alert(data.reason);
+            }
+            document.getElementById('networkStatusText').textContent = '❌ ' + data.reason;
+          }
+        },
+        () => {
+          sendJoinPulse();
+          setTimeout(sendJoinPulse, 250);
+          if (joinRetryTimer) clearInterval(joinRetryTimer);
+          // Continuous fast handshake every 600ms until seated so connection never gets stuck
+          joinRetryTimer = setInterval(() => {
+            if (!isSeated && currentRoomCode === code && !isHost) {
+              sendJoinPulse();
+            } else if (isSeated && joinRetryTimer) {
+              clearInterval(joinRetryTimer);
+              joinRetryTimer = null;
+            }
+          }, 600);
+        }
+      );
+    }
+
+    function broadcastLobbyState() {
+      if (!isHost) return;
+      saveSessionSnapshot();
+      mqttPublish(`coup_v2/${currentRoomCode}/lobby`, {
+        type: 'LOBBY_UPDATE',
+        lobbyPlayers
+      }, true);
+    }
+
+    function syncStateToAll() {
+      if (gameMode === 'local') {
+        renderGameScreen();
+        return;
+      }
+      saveSessionSnapshot();
+      renderGameScreen();
+
+      if (!isHost) return;
+
+      gameState.players.forEach(p => {
+        if (p.id === myPlayerId) return;
+        const copy = JSON.parse(JSON.stringify(gameState));
+        copy.deck = new Array(gameState.deck.length).fill('Hidden');
+        copy.players.forEach(otherP => {
+          if (otherP.id !== p.id) {
+            otherP.cards.forEach(c => {
+              if (!c.lost) c.role = 'Hidden';
+            });
+          }
+        });
+        if (copy.exchangeData && copy.exchangeData.playerId !== p.id) {
+          copy.exchangeData.options = [];
+        }
+
+        mqttPublish(`coup_v2/${currentRoomCode}/state/${p.id}`, {
+          type: 'GAME_STATE_SYNC',
+          state: copy
+        });
+      });
+    }
+
+    function sendCommand(command) {
+      if (gameMode === 'local' || isHost) {
+        processPlayerCommand(myPlayerId, command);
+      } else {
+        mqttPublish(`coup_v2/${currentRoomCode}/commands`, {
+          senderId: myPlayerId,
+          command
+        });
+      }
+    }
+
+    function showActiveGameUI() {
+      document.body.classList.remove('lobby-mode');
+      document.getElementById('lobbyScreen').style.display = 'none';
+      document.getElementById('gameScreen').style.display = 'flex';
+      document.getElementById('leaveBtn').style.display = 'inline-flex';
+    }
+
+    /*************************************************************************
+     * 3. ORDERED FIFO COURT DECK & 0-COIN START ENGINE
+     *************************************************************************/
+    function createInitialCourtDeck() {
+      const deck = [];
+      ['Duke', 'Assassin', 'Captain', 'Ambassador', 'Contessa'].forEach(role => {
+        for (let i = 0; i < 3; i++) deck.push(role);
+      });
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      return deck;
+    }
+
+    function drawCardFromTop() {
+      return gameState.deck.shift();
+    }
+
+    function putCardInBottom(role) {
+      if (role && role !== 'Hidden') {
+        gameState.deck.push(role);
+      }
+    }
+
+    function startGame() {
+      if (lobbyPlayers.length < 2) return alert('At least 2 players are needed!');
+
+      const deck = createInitialCourtDeck();
+      hideMyCards = true;
+      lastSeenLossSignature = null;
+
+      const players = lobbyPlayers.map(lp => ({
+        id: lp.id,
+        name: lp.name,
+        coins: 0,
+        alive: true,
+        cards: [
+          { role: deck.shift(), lost: false },
+          { role: deck.shift(), lost: false }
+        ]
+      }));
+
+      gameState = {
+        started: true,
+        treasury: 50,
+        deck,
+        players,
+        turnIndex: 0,
+        phase: 'TURN_DECISION',
+        pendingAction: null,
+        lossQueue: [],
+        exchangeData: null,
+        proofReveal: null,
+        logs: [{
+          text: `🎴 Game started! 0 Coins & 2 cards dealt.`,
+          type: 'win'
+        }]
+      };
+
+      showActiveGameUI();
+
+      if (gameMode === 'local') {
+        setupLocalPerspectiveBar();
+      }
+
+      syncStateToAll();
+    }
+
+    function setupLocalPerspectiveBar() {
+      const bar = document.getElementById('localPerspectiveBar');
+      const select = document.getElementById('perspectiveSelect');
+      bar.style.display = 'flex';
+      select.innerHTML = '';
+      gameState.players.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        select.appendChild(opt);
+      });
+      myPlayerId = gameState.players[0].id;
+    }
+
+    function switchLocalPerspective(playerId) {
+      myPlayerId = playerId;
+      hideMyCards = true;
+      renderGameScreen();
+    }
+
+    function addLog(text, type = '') {
+      gameState.logs.unshift({ text, type });
+      if (gameState.logs.length > 60) gameState.logs.pop();
+    }
+
+    function getPlayer(id) {
+      return gameState.players.find(p => p.id === id);
+    }
+
+    function getActivePlayer() {
+      return gameState.players[gameState.turnIndex];
+    }
+
+    function advanceToNextTurn() {
+      const alivePlayers = gameState.players.filter(p => p.alive);
+      if (alivePlayers.length <= 1) {
+        gameState.phase = 'GAME_OVER';
+        const winner = alivePlayers[0];
+        if (winner) {
+          addLog(`🏆 VICTORY! ${winner.name} wins!`, 'win');
+        }
+        syncStateToAll();
+        return;
+      }
+
+      let nextIdx = (gameState.turnIndex + 1) % gameState.players.length;
+      while (!gameState.players[nextIdx].alive) {
+        nextIdx = (nextIdx + 1) % gameState.players.length;
+      }
+
+      gameState.turnIndex = nextIdx;
+      gameState.phase = 'TURN_DECISION';
+      gameState.pendingAction = null;
+      gameState.exchangeData = null;
+
+      if (gameMode === 'local') {
+        myPlayerId = gameState.players[nextIdx].id;
+        document.getElementById('perspectiveSelect').value = myPlayerId;
+        hideMyCards = true;
+      }
+
+      syncStateToAll();
+    }
+
+    /*************************************************************************
+     * 4. AUTHORITATIVE GAME ENGINE (NO ASSASSIN REFUND ON CAUGHT BLUFF)
+     *************************************************************************/
+    function processPlayerCommand(senderId, cmd) {
+      const actor = getActivePlayer();
+
+      if (cmd.action === 'DISMISS_PROOF') {
+        gameState.proofReveal = null;
+        syncStateToAll();
+        return;
+      }
+
+      // 1. DECLARE TURN ACTION
+      if (cmd.action === 'DECLARE_ACTION' && gameState.phase === 'TURN_DECISION') {
+        if (senderId !== actor.id && gameMode !== 'local') return;
+
+        gameState.proofReveal = null;
+
+        const { moveType, targetId } = cmd;
+        const target = targetId ? getPlayer(targetId) : null;
+
+        if (actor.coins >= 10 && moveType !== 'COUP') return;
+
+        if (moveType === 'INCOME') {
+          actor.coins += 1;
+          gameState.treasury = Math.max(0, gameState.treasury - 1);
+          addLog(`🪙 ${actor.name} takes Income (+1).`);
+          advanceToNextTurn();
+          return;
+        }
+
+        if (moveType === 'COUP') {
+          if (actor.coins < 7 || !target || !target.alive) return;
+          actor.coins -= 7;
+          gameState.treasury += 7;
+          addLog(`💥 ${actor.name} COUPS ${target.name} (-7)!`, 'challenge');
+          queueQuietCardLoss(target.id, `Couped by ${actor.name}`, 'NEXT_TURN');
+          return;
+        }
+
+        if (moveType === 'FOREIGN_AID') {
+          addLog(`💰 ${actor.name} attempts Foreign Aid (+2).`, 'claim');
+          gameState.phase = 'AWAITING_BLOCK_ONLY';
+          gameState.pendingAction = {
+            type: 'FOREIGN_AID',
+            actorId: actor.id,
+            targetId: null,
+            claimedRole: null,
+            costPaid: 0,
+            passedIds: [actor.id],
+            blockerId: null,
+            blockerRoles: []
+          };
+          syncStateToAll();
+          return;
+        }
+
+        if (moveType === 'TAX') {
+          addLog(`🟣 ${actor.name} claims DUKE for Tax (+3).`, 'claim');
+          gameState.phase = 'AWAITING_ACTION_RESPONSE';
+          gameState.pendingAction = {
+            type: 'TAX',
+            actorId: actor.id,
+            targetId: null,
+            claimedRole: 'Duke',
+            costPaid: 0,
+            passedIds: [actor.id],
+            blockerId: null,
+            blockerRoles: []
+          };
+          syncStateToAll();
+          return;
+        }
+
+        if (moveType === 'ASSASSINATE') {
+          if (actor.coins < 3 || !target || !target.alive) return;
+          actor.coins -= 3;
+          gameState.treasury += 3;
+          addLog(`🔴 ${actor.name} pays 3 & claims ASSASSIN on ${target.name}!`, 'claim');
+          gameState.phase = 'AWAITING_ACTION_RESPONSE';
+          gameState.pendingAction = {
+            type: 'ASSASSINATE',
+            actorId: actor.id,
+            targetId: target.id,
+            claimedRole: 'Assassin',
+            costPaid: 3,
+            passedIds: [actor.id],
+            blockerId: null,
+            blockerRoles: []
+          };
+          syncStateToAll();
+          return;
+        }
+
+        if (moveType === 'STEAL') {
+          if (!target || !target.alive) return;
+          addLog(`🔵 ${actor.name} claims CAPTAIN to Steal from ${target.name}!`, 'claim');
+          gameState.phase = 'AWAITING_ACTION_RESPONSE';
+          gameState.pendingAction = {
+            type: 'STEAL',
+            actorId: actor.id,
+            targetId: target.id,
+            claimedRole: 'Captain',
+            costPaid: 0,
+            passedIds: [actor.id],
+            blockerId: null,
+            blockerRoles: []
+          };
+          syncStateToAll();
+          return;
+        }
+
+        if (moveType === 'EXCHANGE') {
+          addLog(`🟢 ${actor.name} claims AMBASSADOR to Exchange.`, 'claim');
+          gameState.phase = 'AWAITING_ACTION_RESPONSE';
+          gameState.pendingAction = {
+            type: 'EXCHANGE',
+            actorId: actor.id,
+            targetId: null,
+            claimedRole: 'Ambassador',
+            costPaid: 0,
+            passedIds: [actor.id],
+            blockerId: null,
+            blockerRoles: []
+          };
+          syncStateToAll();
+          return;
+        }
+      }
+
+      // 2. PASS / ALLOW
+      if (cmd.action === 'PASS_RESPONSE') {
+        const pa = gameState.pendingAction;
+        if (!pa) return;
+        const passerId = cmd.actingPlayerId || senderId;
+        if (!pa.passedIds.includes(passerId)) {
+          pa.passedIds.push(passerId);
+        }
+
+        const aliveCount = gameState.players.filter(p => p.alive).length;
+        if (pa.passedIds.length >= aliveCount || cmd.forceResolve) {
+          if (gameState.phase === 'AWAITING_ACTION_RESPONSE' || gameState.phase === 'AWAITING_BLOCK_ONLY') {
+            executeUnblockedAction();
+          } else if (gameState.phase === 'AWAITING_BLOCK_RESPONSE') {
+            addLog(`🛡️ Block by ${getPlayer(pa.blockerId).name} stands! Action stopped.`, 'block');
+            advanceToNextTurn();
+          }
+        } else {
+          syncStateToAll();
+        }
+        return;
+      }
+
+      // 3. CHALLENGE AN ACTION CLAIM (If Assassin bluff is caught, 3 coins are NOT refunded!)
+      if (cmd.action === 'CHALLENGE_ACTION' && gameState.phase === 'AWAITING_ACTION_RESPONSE') {
+        const pa = gameState.pendingAction;
+        const challenger = getPlayer(cmd.actingPlayerId || senderId);
+        const claimer = getPlayer(pa.actorId);
+        if (!challenger || !claimer || challenger.id === claimer.id) return;
+
+        addLog(`⚡ ${challenger.name} calls bluff on ${claimer.name}'s ${pa.claimedRole}!`, 'challenge');
+
+        const matchingCardIndex = claimer.cards.findIndex(c => !c.lost && c.role === pa.claimedRole);
+
+        if (matchingCardIndex !== -1) {
+          const provenRole = claimer.cards[matchingCardIndex].role;
+          putCardInBottom(provenRole);
+          claimer.cards[matchingCardIndex].role = drawCardFromTop();
+
+          gameState.proofReveal = {
+            playerName: claimer.name,
+            role: provenRole,
+            detail: `${claimer.name} showed [${provenRole}], put it at Deck Bottom, and drew a replacement.`
+          };
+
+          addLog(`✅ NO BLUFF! ${claimer.name} had [${provenRole}]! ${challenger.name} loses 1 card.`, 'win');
+          queueQuietCardLoss(challenger.id, `Lost bluff call vs ${claimer.name}'s ${provenRole}`, 'RESOLVE_ACTION');
+        } else {
+          if (pa.type === 'ASSASSINATE') {
+            // Rule: Person A caught bluffing Assassin does NOT get their 3 coins refunded!
+            addLog(`❌ BLUFF CAUGHT! ${claimer.name} had no ${pa.claimedRole} (3 Coins lost) & loses 1 card!`, 'challenge');
+          } else {
+            addLog(`❌ BLUFF CAUGHT! ${claimer.name} had no ${pa.claimedRole} & loses 1 card!`, 'challenge');
+          }
+          queueQuietCardLoss(claimer.id, `Caught bluffing ${pa.claimedRole}`, 'NEXT_TURN');
+        }
+        return;
+      }
+
+      // 4. DECLARE A BLOCK (No card mentioned for Steal or Assassinate!)
+      if (cmd.action === 'DECLARE_BLOCK' && (gameState.phase === 'AWAITING_ACTION_RESPONSE' || gameState.phase === 'AWAITING_BLOCK_ONLY')) {
+        const pa = gameState.pendingAction;
+        const blocker = getPlayer(cmd.actingPlayerId || senderId);
+        if (!blocker || !blocker.alive || blocker.id === pa.actorId) return;
+
+        if ((pa.type === 'ASSASSINATE' || pa.type === 'STEAL') && blocker.id !== pa.targetId) return;
+
+        pa.blockerId = blocker.id;
+        if (pa.type === 'STEAL') {
+          pa.blockerRoles = ['Captain', 'Ambassador'];
+        } else if (pa.type === 'ASSASSINATE') {
+          pa.blockerRoles = ['Contessa'];
+        } else if (pa.type === 'FOREIGN_AID') {
+          pa.blockerRoles = ['Duke'];
+        }
+
+        pa.passedIds = [blocker.id];
+        gameState.phase = 'AWAITING_BLOCK_RESPONSE';
+
+        addLog(`🛡️ ${blocker.name} BLOCKS ${getPlayer(pa.actorId).name}'s ${pa.type}!`, 'block');
+        syncStateToAll();
+        return;
+      }
+
+      // 5. CHALLENGE A BLOCK
+      if (cmd.action === 'CHALLENGE_BLOCK' && gameState.phase === 'AWAITING_BLOCK_RESPONSE') {
+        const pa = gameState.pendingAction;
+        const challenger = getPlayer(cmd.actingPlayerId || senderId);
+        const blocker = getPlayer(pa.blockerId);
+        if (!challenger || !blocker || challenger.id === blocker.id) return;
+
+        const validRoles = pa.blockerRoles || [];
+        addLog(`⚡ ${challenger.name} calls bluff on ${blocker.name}'s Block!`, 'challenge');
+
+        const matchingCardIndex = blocker.cards.findIndex(c => !c.lost && validRoles.includes(c.role));
+
+        if (matchingCardIndex !== -1) {
+          const provenRole = blocker.cards[matchingCardIndex].role;
+          putCardInBottom(provenRole);
+          blocker.cards[matchingCardIndex].role = drawCardFromTop();
+
+          gameState.proofReveal = {
+            playerName: blocker.name,
+            role: provenRole,
+            detail: `${blocker.name} proved Block with [${provenRole}], put it at Deck Bottom, and drew a new card.`
+          };
+
+          addLog(`✅ BLOCK VALID! ${blocker.name} showed [${provenRole}]! Block stands & ${challenger.name} loses 1 card.`, 'win');
+          queueQuietCardLoss(challenger.id, `Lost bluff call vs ${blocker.name}'s block`, 'NEXT_TURN');
+        } else {
+          addLog(`❌ BLOCK BLUFF CAUGHT! ${blocker.name} loses 1 card & ${pa.type} goes through!`, 'challenge');
+          queueQuietCardLoss(blocker.id, `Caught bluffing block`, 'RESOLVE_ACTION');
+        }
+        return;
+      }
+
+      // 6. QUIETLY RETURN LOST CARD TO BOTTOM OF DECK
+      if (cmd.action === 'LOSE_CARD' && gameState.phase === 'AWAITING_LOSS') {
+        const currentLoss = gameState.lossQueue[0];
+        if (!currentLoss) return;
+        const loser = getPlayer(currentLoss.playerId);
+        const card = loser.cards[cmd.cardIndex];
+        if (!card || card.lost) return;
+
+        putCardInBottom(card.role);
+        card.lost = true;
+        card.role = 'Hidden';
+
+        addLog(`📥 ${loser.name} returns 1 card to Deck Bottom (${currentLoss.reason}).`, 'challenge');
+
+        const stillAlive = loser.cards.some(c => !c.lost);
+        if (!stillAlive) {
+          loser.alive = false;
+          gameState.treasury += loser.coins;
+          loser.coins = 0;
+          addLog(`⚰️ ${loser.name} is eliminated!`, 'challenge');
+        }
+
+        gameState.lossQueue.shift();
+
+        if (gameState.lossQueue.length > 0) {
+          syncStateToAll();
+        } else if (currentLoss.nextCallbackType === 'RESOLVE_ACTION') {
+          executeUnblockedAction();
+        } else {
+          advanceToNextTurn();
+        }
+        return;
+      }
+
+      // 7. AMBASSADOR EXCHANGE COMPLETION
+      if (cmd.action === 'COMPLETE_EXCHANGE' && gameState.phase === 'AWAITING_EXCHANGE') {
+        const ex = gameState.exchangeData;
+        if (!ex || (senderId !== ex.playerId && gameMode !== 'local')) return;
+
+        const chosenIndices = cmd.chosenIndices || [];
+        if (chosenIndices.length !== ex.keepCount) return;
+
+        const player = getPlayer(ex.playerId);
+        const keptRoles = chosenIndices.map(idx => ex.options[idx]);
+        const returnedRoles = ex.options.filter((_, idx) => !chosenIndices.includes(idx));
+
+        let kIdx = 0;
+        player.cards.forEach(c => {
+          if (!c.lost) {
+            c.role = keptRoles[kIdx++];
+          }
+        });
+
+        returnedRoles.forEach(r => putCardInBottom(r));
+
+        addLog(`🟢 ${player.name} completed Ambassador Exchange.`);
+        advanceToNextTurn();
+      }
+    }
+
+    function queueQuietCardLoss(playerId, reason, nextCallbackType) {
+      const player = getPlayer(playerId);
+      if (!player || !player.alive) {
+        if (nextCallbackType === 'RESOLVE_ACTION') executeUnblockedAction();
+        else advanceToNextTurn();
+        return;
+      }
+
+      const activeIndices = [];
+      player.cards.forEach((c, idx) => {
+        if (!c.lost) activeIndices.push(idx);
+      });
+
+      if (activeIndices.length === 1) {
+        const idx = activeIndices[0];
+        putCardInBottom(player.cards[idx].role);
+        player.cards[idx].lost = true;
+        player.cards[idx].role = 'Hidden';
+        player.alive = false;
+        gameState.treasury += player.coins;
+        player.coins = 0;
+        addLog(`📥 ${player.name} loses last card (${reason}) & is out!`, 'challenge');
+
+        if (nextCallbackType === 'RESOLVE_ACTION') executeUnblockedAction();
+        else advanceToNextTurn();
+        return;
+      }
+
+      gameState.phase = 'AWAITING_LOSS';
+      gameState.lossQueue.push({
+        playerId,
+        reason,
+        nextCallbackType,
+        lossId: Date.now() + '_' + Math.random().toString(36).slice(2, 6)
+      });
+      if (gameMode === 'local') {
+        myPlayerId = playerId;
+        document.getElementById('perspectiveSelect').value = myPlayerId;
+        hideMyCards = true;
+      }
+      syncStateToAll();
+    }
+
+    function executeUnblockedAction() {
+      const pa = gameState.pendingAction;
+      if (!pa) return advanceToNextTurn();
+
+      const actor = getPlayer(pa.actorId);
+      const target = pa.targetId ? getPlayer(pa.targetId) : null;
+
+      if (pa.type === 'FOREIGN_AID') {
+        actor.coins += 2;
+        gameState.treasury = Math.max(0, gameState.treasury - 2);
+        addLog(`💰 ${actor.name} takes Foreign Aid (+2).`);
+        advanceToNextTurn();
+      } else if (pa.type === 'TAX') {
+        actor.coins += 3;
+        gameState.treasury = Math.max(0, gameState.treasury - 3);
+        addLog(`🟣 ${actor.name} collects Tax (+3).`);
+        advanceToNextTurn();
+      } else if (pa.type === 'STEAL') {
+        if (target && target.alive) {
+          const stolen = Math.min(2, target.coins);
+          target.coins -= stolen;
+          actor.coins += stolen;
+          addLog(`🔵 ${actor.name} steals ${stolen} Coin(s) from ${target.name}!`);
+        }
+        advanceToNextTurn();
+      } else if (pa.type === 'ASSASSINATE') {
+        if (target && target.alive) {
+          addLog(`🗡️ ${actor.name}'s Assassination hits ${target.name}!`, 'challenge');
+          queueQuietCardLoss(target.id, `Assassinated by ${actor.name}`, 'NEXT_TURN');
+        } else {
+          advanceToNextTurn();
+        }
+      } else if (pa.type === 'EXCHANGE') {
+        const oldRoles = [];
+        actor.cards.forEach(c => {
+          if (!c.lost) {
+            oldRoles.push(c.role);
+            c.role = drawCardFromTop();
+          }
+        });
+        oldRoles.forEach(r => putCardInBottom(r));
+        addLog(`🟢 ${actor.name} swapped their card(s) with the top of the Court Deck and placed the old ones on the bottom.`);
+        advanceToNextTurn();
+      }
+    }
+
+    /*************************************************************************
+     * 5. UI RENDERING (PRIVACY SHIELD ON LOSS, FULL VERTICAL CARDS, BUTTON SIZES)
+     *************************************************************************/
+    let pendingMoveWaitingTarget = null;
+    let selectedExchangeIndices = [];
+
+    function renderGameScreen() {
+      document.getElementById('treasuryCoinsText').textContent = gameState.treasury;
+      document.getElementById('courtDeckCountText').textContent = gameState.deck.length;
+
+      const activePlayer = getActivePlayer();
+      const me = getPlayer(myPlayerId) || gameState.players[0];
+      if (!me) return;
+      const isMyTurn = activePlayer && me && activePlayer.id === me.id && gameState.phase !== 'GAME_OVER';
+
+      const topBar = document.getElementById('turnTopBar');
+      topBar.classList.toggle('my-turn-active', isMyTurn);
+
+      document.getElementById('turnStatusHeader').textContent =
+        gameState.phase === 'GAME_OVER'
+          ? '🏆 GAME OVER'
+          : (isMyTurn ? `YOUR TURN — ${activePlayer.name}` : `TURN: ${activePlayer ? activePlayer.name : ''}`);
+
+      const currentLoss = gameState.phase === 'AWAITING_LOSS' ? gameState.lossQueue[0] : null;
+      const mustPickToLose = Boolean(currentLoss && currentLoss.playerId === me.id);
+
+      // PRIVACY SHIELD: Never auto-pop cards open when Couped or losing a card!
+      // Instead, lock hideMyCards = true when a new loss event arrives so the player must tap first to peek.
+      if (mustPickToLose) {
+        const lossSig = currentLoss.lossId || `${currentLoss.playerId}_${currentLoss.reason}_${gameState.lossQueue.length}`;
+        if (lastSeenLossSignature !== lossSig) {
+          lastSeenLossSignature = lossSig;
+          hideMyCards = true;
+        }
+      } else {
+        lastSeenLossSignature = null;
+      }
+
+      const peekBtn = document.getElementById('bigPeekBtn');
+      peekBtn.classList.toggle('loss-alert-peek', mustPickToLose && hideMyCards);
+
+      if (mustPickToLose && hideMyCards) {
+        peekBtn.innerHTML = '🛡️ YOU MUST DUMP 1 CARD — TAP TO SEE YOUR CARDS FIRST (PRIVACY SHIELD)';
+      } else if (mustPickToLose && !hideMyCards) {
+        peekBtn.innerHTML = '⬇️ TAP ONE OF YOUR VERTICAL CARDS BELOW TO DUMP IT (OR TAP HERE TO HIDE)';
+        peekBtn.style.borderColor = '#f43f5e';
+        peekBtn.style.background = 'rgba(225, 29, 72, 0.2)';
+        peekBtn.style.color = '#fda4af';
+      } else {
+        peekBtn.innerHTML = hideMyCards ? '🙈 SECRET CARDS HIDDEN (TAP TO PEEK)' : '👀 HIDE MY CARDS';
+        peekBtn.style.borderColor = hideMyCards ? '#3b82f6' : '#f59e0b';
+        peekBtn.style.background = hideMyCards ? '#1e293b' : 'rgba(245, 158, 11, 0.15)';
+        peekBtn.style.color = hideMyCards ? '#fff' : '#fbbf24';
+      }
+
+      const myCardsArea = document.getElementById('myCardsArea');
+      if (hideMyCards) {
+        myCardsArea.style.display = 'none';
+      } else {
+        myCardsArea.style.display = 'grid';
+        renderMyCards(me, mustPickToLose);
+      }
+
+      renderProofBanner();
+      renderPhaseBanner(me);
+      renderCompactPlayers(me, activePlayer);
+      renderCommandDeck(me, activePlayer);
+      renderLogs();
+
+      if (gameState.phase === 'AWAITING_EXCHANGE' && gameState.exchangeData && gameState.exchangeData.playerId === me.id) {
+        openAmbassadorModal();
+      } else {
+        closeModal('exchangeModal');
+      }
+    }
+
+    function renderCompactPlayers(me, activePlayer) {
+      const grid = document.getElementById('compactSeatsGrid');
+      grid.innerHTML = '';
+
+      const orderedPlayers = [...gameState.players].sort((a, b) => (a.id === me.id ? -1 : b.id === me.id ? 1 : 0));
+
+      orderedPlayers.forEach(p => {
+        const isTurn = activePlayer && p.id === activePlayer.id && gameState.phase !== 'GAME_OVER';
+        const isMe = p.id === me.id;
+        const activeCards = p.cards.filter(c => !c.lost).length;
+
+        const el = document.createElement('div');
+        el.className = `mini-pod ${isTurn ? 'active-turn' : ''} ${!p.alive ? 'eliminated' : ''}`;
+
+        el.innerHTML = `
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:0.25rem;">
+            <span style="font-weight:700; font-size:0.82rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(p.name)}</span>
+            <div style="display:flex; gap:0.18rem; flex-shrink:0;">
+              ${isMe ? '<span class="badge badge-you">YOU</span>' : ''}
+              ${isTurn ? '<span class="badge badge-turn">TURN</span>' : ''}
+            </div>
+          </div>
+          <div class="mini-pod-stats">
+            <span><span class="pod-icon">🎴</span><strong class="pod-num">${activeCards}</strong></span>
+            <span>•</span>
+            <span><span class="pod-icon">🪙</span><strong class="pod-coin-num">${p.coins}</strong></span>
+          </div>
+        `;
+        grid.appendChild(el);
+      });
+    }
+
+    function renderMyCards(me, mustPickToLose) {
+      const area = document.getElementById('myCardsArea');
+      area.innerHTML = '';
+
+      me.cards.forEach((card, cIdx) => {
+        if (card.lost) {
+          area.innerHTML += `
+            <div class="influence-card returned-slot">
+              <div style="font-size:0.78rem; font-weight:700; color:#9ca3af;">📥 LOST CARD</div>
+              <div style="font-size:0.64rem; color:#6b7280; margin-top:0.2rem;">In Deck Bottom</div>
+            </div>
+          `;
+          return;
+        }
+
+        const roleMeta = ROLES[card.role];
+        area.innerHTML += `
+          <div class="influence-card ${mustPickToLose ? 'selectable' : ''}"
+               onclick="${mustPickToLose ? `selectCardToLose(${cIdx})` : ''}">
+            <img class="card-art" src="${getCardImageSrc(card.role)}" alt="${card.role}" onerror="handleImageFallback(this, '${card.role}')" />
+            <div class="card-label-bar">
+              <div class="card-role-name" style="color:${roleMeta ? roleMeta.color : '#cbd5e1'};">
+                ${card.role.toUpperCase()}
+              </div>
+              <div class="card-role-sub">
+                ${mustPickToLose ? '⬇️ Tap to Dump Card' : 'Secret Card'}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function selectCardToLose(cardIndex) {
+      hideMyCards = true;
+      lastSeenLossSignature = null;
+      sendCommand({ action: 'LOSE_CARD', cardIndex });
+    }
+
+    function renderProofBanner() {
+      const banner = document.getElementById('proofBanner');
+      if (!gameState.proofReveal) {
+        banner.style.display = 'none';
+        return;
+      }
+      const pr = gameState.proofReveal;
+      banner.style.display = 'flex';
+      const img = document.getElementById('proofCardImg');
+      img.src = getCardImageSrc(pr.role);
+      img.onerror = function () { handleImageFallback(this, pr.role); };
+      document.getElementById('proofBannerTitle').textContent = `✅ NO BLUFF: ${pr.playerName} showed ${pr.role.toUpperCase()}!`;
+      document.getElementById('proofBannerSub').textContent = pr.detail;
+    }
+
+    function dismissProofBanner() {
+      sendCommand({ action: 'DISMISS_PROOF' });
+    }
+
+    function renderPhaseBanner(me) {
+      const banner = document.getElementById('phaseBanner');
+      const title = document.getElementById('phaseBannerTitle');
+      const sub = document.getElementById('phaseBannerSub');
+      const btns = document.getElementById('phaseBannerButtons');
+      btns.innerHTML = '';
+
+      const pa = gameState.pendingAction;
+
+      // BEFORE BLOCK: Action declared (Assassinate, Steal, Tax, Exchange)
+      if (gameState.phase === 'AWAITING_ACTION_RESPONSE' && pa) {
+        banner.style.display = 'flex';
+        const actor = getPlayer(pa.actorId);
+        const target = pa.targetId ? getPlayer(pa.targetId) : null;
+        title.textContent = `🚨 ${actor.name} claims [${pa.claimedRole}] for ${pa.type}${target ? ' → ' + target.name : ''}!`;
+        sub.textContent = pa.type === 'ASSASSINATE'
+          ? `${target ? target.name : 'Target'} can Call Bluff on Assassin OR Block (${pa.passedIds.length}/${gameState.players.filter(p => p.alive).length} passed)`
+          : `Call Bluff, Block, or Allow (${pa.passedIds.length}/${gameState.players.filter(p => p.alive).length} passed)`;
+
+        if (me.alive && me.id !== actor.id) {
+          const chalBtn = document.createElement('button');
+          chalBtn.className = 'btn btn-crimson response-btn';
+          chalBtn.textContent = `🔥 Call Bluff (${pa.claimedRole})`;
+          chalBtn.onclick = () => sendCommand({ action: 'CHALLENGE_ACTION', actingPlayerId: me.id });
+          btns.appendChild(chalBtn);
+
+          if ((pa.type === 'ASSASSINATE' || pa.type === 'STEAL') && me.id === pa.targetId) {
+            const bBtn = document.createElement('button');
+            bBtn.className = 'btn btn-gold response-btn';
+            bBtn.textContent = `🛡️ Block`;
+            bBtn.onclick = () => sendCommand({ action: 'DECLARE_BLOCK', actingPlayerId: me.id });
+            btns.appendChild(bBtn);
+          }
+
+          const alreadyPassed = pa.passedIds.includes(me.id);
+          const passBtn = document.createElement('button');
+          passBtn.className = 'btn btn-emerald response-btn';
+          passBtn.disabled = alreadyPassed;
+          passBtn.textContent = alreadyPassed ? '✓ Allowed' : '👍 Allow';
+          passBtn.onclick = () => sendCommand({ action: 'PASS_RESPONSE', actingPlayerId: me.id });
+          btns.appendChild(passBtn);
+        }
+
+        if (isHost || gameMode === 'local') {
+          const forceBtn = document.createElement('button');
+          forceBtn.className = 'btn response-btn response-btn-resolve';
+          forceBtn.textContent = '⏩ Resolve';
+          forceBtn.onclick = () => sendCommand({ action: 'PASS_RESPONSE', forceResolve: true });
+          btns.appendChild(forceBtn);
+        }
+        return;
+      }
+
+      // FOREIGN AID BLOCK WINDOW
+      if (gameState.phase === 'AWAITING_BLOCK_ONLY' && pa) {
+        banner.style.display = 'flex';
+        const actor = getPlayer(pa.actorId);
+        title.textContent = `💰 ${actor.name} takes Foreign Aid (+2).`;
+        sub.textContent = `Anyone may Block (Duke) or Allow.`;
+
+        if (me.alive && me.id !== actor.id) {
+          const bBtn = document.createElement('button');
+          bBtn.className = 'btn btn-gold response-btn';
+          bBtn.textContent = `🛡️ Block`;
+          bBtn.onclick = () => sendCommand({ action: 'DECLARE_BLOCK', actingPlayerId: me.id });
+          btns.appendChild(bBtn);
+
+          const alreadyPassed = pa.passedIds.includes(me.id);
+          const passBtn = document.createElement('button');
+          passBtn.className = 'btn btn-emerald response-btn';
+          passBtn.disabled = alreadyPassed;
+          passBtn.textContent = alreadyPassed ? '✓ Allowed' : '👍 Allow';
+          passBtn.onclick = () => sendCommand({ action: 'PASS_RESPONSE', actingPlayerId: me.id });
+          btns.appendChild(passBtn);
+        }
+
+        if (isHost || gameMode === 'local') {
+          const forceBtn = document.createElement('button');
+          forceBtn.className = 'btn response-btn response-btn-resolve';
+          forceBtn.textContent = '⏩ Resolve';
+          forceBtn.onclick = () => sendCommand({ action: 'PASS_RESPONSE', forceResolve: true });
+          btns.appendChild(forceBtn);
+        }
+        return;
+      }
+
+      // AFTER BLOCK: Someone blocked! Now attacker/table can Call Bluff on the Block or Accept Block
+      if (gameState.phase === 'AWAITING_BLOCK_RESPONSE' && pa) {
+        banner.style.display = 'flex';
+        const blocker = getPlayer(pa.blockerId);
+        title.textContent = `🛡️ ${blocker.name} BLOCKS ${pa.type}!`;
+        sub.textContent = pa.type === 'STEAL'
+          ? `Figure out if ${blocker.name} has Captain/Ambassador — Call Bluff or Accept Block!`
+          : `Call Bluff on ${blocker.name}'s Block or Accept Block.`;
+
+        if (me.alive && me.id !== blocker.id) {
+          const chalBtn = document.createElement('button');
+          chalBtn.className = 'btn btn-crimson response-btn';
+          chalBtn.textContent = `🔥 Call Bluff`;
+          chalBtn.onclick = () => sendCommand({ action: 'CHALLENGE_BLOCK', actingPlayerId: me.id });
+          btns.appendChild(chalBtn);
+
+          const alreadyPassed = pa.passedIds.includes(me.id);
+          const passBtn = document.createElement('button');
+          passBtn.className = 'btn btn-emerald response-btn';
+          passBtn.disabled = alreadyPassed;
+          passBtn.textContent = alreadyPassed ? '✓ Accepted' : '👍 Accept Block';
+          passBtn.onclick = () => sendCommand({ action: 'PASS_RESPONSE', actingPlayerId: me.id });
+          btns.appendChild(passBtn);
+        }
+
+        if (isHost || gameMode === 'local') {
+          const forceBtn = document.createElement('button');
+          forceBtn.className = 'btn response-btn response-btn-resolve';
+          forceBtn.textContent = '⏩ Accept Now';
+          forceBtn.onclick = () => sendCommand({ action: 'PASS_RESPONSE', forceResolve: true });
+          btns.appendChild(forceBtn);
+        }
+        return;
+      }
+
+      if (gameState.phase === 'AWAITING_LOSS' && gameState.lossQueue.length > 0) {
+        banner.style.display = 'flex';
+        const currentLoss = gameState.lossQueue[0];
+        const loser = getPlayer(currentLoss.playerId);
+        title.textContent = `📥 ${loser.name} must lose 1 card (${currentLoss.reason})!`;
+        if (loser.id === me.id) {
+          sub.textContent = hideMyCards
+            ? `🔒 Your cards are kept hidden for privacy. Tap the button below to view your cards, then choose 1 to dump.`
+            : `⬇️ Tap one of your vertical cards below to return it to the Deck Bottom.`;
+          if (hideMyCards) {
+            const revealBtn = document.createElement('button');
+            revealBtn.className = 'btn btn-gold response-btn';
+            revealBtn.textContent = '👀 See My Cards to Dump One';
+            revealBtn.onclick = () => {
+              hideMyCards = false;
+              renderGameScreen();
+            };
+            btns.appendChild(revealBtn);
+          }
+        } else {
+          sub.textContent = `Waiting for ${loser.name} to view their cards and return 1 card...`;
+        }
+        return;
+      }
+
+      if (gameState.phase === 'GAME_OVER') {
+        banner.style.display = 'flex';
+        const winner = gameState.players.find(p => p.alive);
+        title.textContent = `👑 ${winner ? winner.name : 'Player'} Wins!`;
+        sub.textContent = `Game Over.`;
+        if (isHost || gameMode === 'local') {
+          const againBtn = document.createElement('button');
+          againBtn.className = 'btn btn-gold response-btn';
+          againBtn.textContent = '🔄 New Game';
+          againBtn.onclick = () => startGame();
+          btns.appendChild(againBtn);
+        }
+        return;
+      }
+
+      banner.style.display = 'none';
+    }
+
+    function renderCommandDeck(me, activePlayer) {
+      const isMyTurn = activePlayer && me.id === activePlayer.id && gameState.phase === 'TURN_DECISION' && me.alive;
+      const mustCoup = me.coins >= 10;
+      document.getElementById('mandatoryCoupWarning').style.display = (isMyTurn && mustCoup) ? 'inline' : 'none';
+
+      const myLiveRoles = me.cards.filter(c => !c.lost).map(c => c.role);
+
+      const generalActions = [
+        {
+          id: 'INCOME',
+          title: '🪙 Income',
+          desc: '+1 Coin',
+          disabled: !isMyTurn || mustCoup,
+          needsTarget: false
+        },
+        {
+          id: 'FOREIGN_AID',
+          title: '💰 Foreign Aid',
+          desc: '+2 Coins',
+          disabled: !isMyTurn || mustCoup,
+          needsTarget: false
+        },
+        {
+          id: 'COUP',
+          title: '💥 Coup',
+          desc: '-7 Coins',
+          disabled: !isMyTurn || me.coins < 7,
+          needsTarget: true
+        }
+      ];
+
+      // 4 Character Claims fitted cleanly in 1 horizontal line
+      const charActions = [
+        {
+          id: 'TAX',
+          role: 'Duke',
+          title: '🟣 Duke',
+          desc: 'Tax (+3)',
+          disabled: !isMyTurn || mustCoup,
+          needsTarget: false
+        },
+        {
+          id: 'ASSASSINATE',
+          role: 'Assassin',
+          title: '🔴 Assassin',
+          desc: 'Kill (-3)',
+          disabled: !isMyTurn || mustCoup || me.coins < 3,
+          needsTarget: true
+        },
+        {
+          id: 'STEAL',
+          role: 'Captain',
+          title: '🔵 Captain',
+          desc: 'Steal (+2)',
+          disabled: !isMyTurn || mustCoup,
+          needsTarget: true
+        },
+        {
+          id: 'EXCHANGE',
+          role: 'Ambassador',
+          title: '🟢 Ambass.',
+          desc: 'Swap (2)',
+          disabled: !isMyTurn || mustCoup,
+          needsTarget: false
+        }
+      ];
+
+      const genGrid = document.getElementById('generalActionsGrid');
+      genGrid.innerHTML = '';
+      generalActions.forEach(a => {
+        const btn = document.createElement('button');
+        btn.className = 'action-btn';
+        btn.disabled = a.disabled;
+        btn.onclick = () => triggerTurnMove(a.id, a.needsTarget);
+        btn.innerHTML = `
+          <div class="action-btn-title">${a.title}</div>
+          <div class="action-btn-desc">${a.desc}</div>
+        `;
+        genGrid.appendChild(btn);
+      });
+
+      const charGrid = document.getElementById('characterActionsGrid');
+      charGrid.innerHTML = '';
+      charActions.forEach(a => {
+        const holdsCard = myLiveRoles.includes(a.role);
+        const btn = document.createElement('button');
+        btn.className = 'action-btn';
+        btn.disabled = a.disabled;
+        btn.onclick = () => triggerTurnMove(a.id, a.needsTarget);
+        btn.innerHTML = `
+          <div class="action-btn-title">${a.title}</div>
+          <div class="action-btn-desc">${a.desc}</div>
+          ${!hideMyCards ? `<span class="bluff-pill ${holdsCard ? 'pill-truth' : 'pill-bluff'}">${holdsCard ? '✓ Have' : 'Bluff'}</span>` : ''}
+        `;
+        charGrid.appendChild(btn);
+      });
+    }
+
+    function triggerTurnMove(moveType, needsTarget) {
+      if (!needsTarget) {
+        sendCommand({ action: 'DECLARE_ACTION', moveType, targetId: null });
+        return;
+      }
+
+      pendingMoveWaitingTarget = moveType;
+      const list = document.getElementById('targetPlayersList');
+      list.innerHTML = '';
+      const activePlayer = getActivePlayer();
+
+      gameState.players.forEach(p => {
+        if (!p.alive || p.id === activePlayer.id) return;
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.style.width = '100%';
+        btn.style.justifyContent = 'space-between';
+        btn.style.padding = '0.58rem 0.78rem';
+        btn.style.fontSize = '0.84rem';
+        btn.innerHTML = `
+          <span><strong>${escapeHtml(p.name)}</strong> (🎴 ${p.cards.filter(c => !c.lost).length})</span>
+          <span style="font-family:'JetBrains Mono',monospace; font-weight:700; color:#fde047;">🪙 ${p.coins}</span>
+        `;
+        btn.onclick = () => {
+          sendCommand({ action: 'DECLARE_ACTION', moveType: pendingMoveWaitingTarget, targetId: p.id });
+          closeModal('targetModal');
+        };
+        list.appendChild(btn);
+      });
+
+      openModal('targetModal');
+    }
+
+    function openAmbassadorModal() {
+      const ex = gameState.exchangeData;
+      if (!ex) return;
+      const modal = document.getElementById('exchangeModal');
+      if (modal.classList.contains('open')) return;
+
+      const instruction = document.getElementById('exchangeInstructionText');
+      const container = document.getElementById('exchangeCardsContainer');
+      const confirmBtn = document.getElementById('confirmExchangeBtn');
+
+      instruction.textContent = `Tap exactly ${ex.keepCount} card(s) to keep. Unchosen go to Deck Bottom.`;
+      container.innerHTML = '';
+      selectedExchangeIndices = [];
+      confirmBtn.disabled = true;
+
+      ex.options.forEach((role, idx) => {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'influence-card selectable';
+        const roleMeta = ROLES[role] || ROLES.Hidden;
+
+        cardDiv.innerHTML = `
+          <img class="card-art" src="${getCardImageSrc(role)}" alt="${role}" onerror="handleImageFallback(this, '${role}')" />
+          <div class="card-label-bar">
+            <div class="card-role-name" style="color:${roleMeta.color};">${role.toUpperCase()}</div>
+            <div class="card-role-sub status-text">Tap to select</div>
+          </div>
+        `;
+
+        cardDiv.onclick = () => {
+          const pos = selectedExchangeIndices.indexOf(idx);
+          if (pos !== -1) {
+            selectedExchangeIndices.splice(pos, 1);
+            cardDiv.style.borderColor = 'rgba(255, 255, 255, 0.24)';
+            cardDiv.querySelector('.status-text').textContent = 'Tap to select';
+          } else {
+            if (selectedExchangeIndices.length >= ex.keepCount) {
+              const firstIdx = selectedExchangeIndices.shift();
+              const firstEl = container.children[firstIdx];
+              if (firstEl) {
+                firstEl.style.borderColor = 'rgba(255, 255, 255, 0.24)';
+                firstEl.querySelector('.status-text').textContent = 'Tap to select';
+              }
+            }
+            selectedExchangeIndices.push(idx);
+            cardDiv.style.borderColor = '#10b981';
+            cardDiv.querySelector('.status-text').textContent = '✓ KEEP';
+          }
+          confirmBtn.disabled = selectedExchangeIndices.length !== ex.keepCount;
+        };
+
+        container.appendChild(cardDiv);
+      });
+
+      openModal('exchangeModal');
+    }
+
+    function submitAmbassadorExchange() {
+      const ex = gameState.exchangeData;
+      if (!ex || selectedExchangeIndices.length !== ex.keepCount) return;
+      sendCommand({ action: 'COMPLETE_EXCHANGE', chosenIndices: selectedExchangeIndices });
+      closeModal('exchangeModal');
+    }
+
+    function openModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) modal.classList.add('open');
+    }
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) modal.classList.remove('open');
+    }
+
+    function renderLogs() {
+      const container = document.getElementById('gameLogContainer');
+      container.innerHTML = '';
+      gameState.logs.forEach(log => {
+        const el = document.createElement('div');
+        el.className = `log-entry ${log.type || ''}`;
+        el.textContent = log.text;
+        container.appendChild(el);
+      });
+    }
+
+    function resetToLobby() {
+      if (confirm('Leave the table and return to the lobby?')) {
+        cleanupTransports();
+        clearSessionSnapshot();
+        currentRoomCode = '';
+        gameState.started = false;
+        lobbyPlayers = [];
+        document.body.classList.add('lobby-mode');
+        document.getElementById('gameScreen').style.display = 'none';
+        document.getElementById('lobbyScreen').style.display = 'block';
+        document.getElementById('leaveBtn').style.display = 'none';
+        document.getElementById('localPerspectiveBar').style.display = 'none';
+        document.getElementById('roomCodeDisplay').style.display = 'none';
+        document.getElementById('networkStatusText').textContent = '';
+        renderLobbySeats();
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function copyTableCode() {
+      const code = document.getElementById('roomCodeText').textContent;
+      if (!code || code === '------') return;
+      navigator.clipboard.writeText(code).then(() => {
+        alert(`Room Code ${code} copied!`);
+      });
+    }
+
+    function copyTableLink() {
+      const code = document.getElementById('roomCodeText').textContent;
+      if (!code || code === '------') return;
+      const url = `${window.location.origin}${window.location.pathname}?join=${code}`;
+      navigator.clipboard.writeText(url).then(() => {
+        alert(`Link copied!\n${url}`);
+      });
+    }
+
+    // Re-sync automatically when phone screen wakes up or network reconnects
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && gameMode === 'online' && currentRoomCode) {
+        if (isHost) {
+          if (gameState.started) syncStateToAll();
+          else broadcastLobbyState();
+        } else {
+          const savedName = document.getElementById('playerNameInput').value.trim() || getPersistentValue('coup_username') || 'Player';
+          mqttPublish(`coup_v2/${currentRoomCode}/join`, {
+            type: 'JOIN_REQUEST',
+            id: myPlayerId,
+            name: savedName
+          });
+        }
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // Set box image dynamically so static bundlers don't choke if images/ folder is external
+      const boxImg = document.getElementById('lobbyBoxImg');
+      if (boxImg) {
+        boxImg.src = 'images/box.jpg';
+      }
+
+      // 1. Restore remembered username from Cookies / LocalStorage
+      const rememberedName = getPersistentValue('coup_username');
+      if (rememberedName) {
+        document.getElementById('playerNameInput').value = rememberedName;
+      }
+
+      renderLobbySeats();
+
+      // 2. Check URL for explicit ?join=XXXX link
+      const params = new URLSearchParams(window.location.search);
+      const urlCode = (params.get('join') || window.location.hash.replace('#', '')).trim();
+      const savedRoom = getPersistentValue('coup_room_code');
+      const savedRole = getPersistentValue('coup_role');
+      const snapshot = loadSessionSnapshot();
+
+      if (urlCode && /^\d{4}$/.test(urlCode) && urlCode !== savedRoom) {
+        document.getElementById('joinCodeInput').value = urlCode;
+        selectLobbyTab('online');
+        if (rememberedName) {
+          joinOnlineRoom(true);
+        } else {
+          document.getElementById('networkStatusText').textContent = `Table ${urlCode} detected! Enter your name and tap Join Table.`;
+        }
+        return;
+      }
+
+      // 3. Auto-Resume Previous Table & Seat on Page Reload (Both Host & Guest)
+      if (savedRoom && /^\d{4}$/.test(savedRoom) && snapshot && snapshot.roomCode === savedRoom) {
+        selectLobbyTab('online');
+        document.getElementById('joinCodeInput').value = savedRoom;
+
+        if (savedRole === 'host' && snapshot.isHost) {
+          myPlayerId = snapshot.myPlayerId || myPlayerId;
+          setPersistentValue('coup_player_id', myPlayerId, 365);
+          lobbyPlayers = Array.isArray(snapshot.lobbyPlayers) ? snapshot.lobbyPlayers : [];
+          if (snapshot.gameState && snapshot.gameState.started) {
+            gameState = snapshot.gameState;
+            hideMyCards = true;
+            showActiveGameUI();
+            renderGameScreen();
+          }
+          hostOnlineRoom(savedRoom);
+        } else {
+          myPlayerId = snapshot.myPlayerId || myPlayerId;
+          setPersistentValue('coup_player_id', myPlayerId, 365);
+          if (snapshot.lobbyPlayers) {
+            lobbyPlayers = snapshot.lobbyPlayers;
+            renderLobbySeats();
+          }
+          if (snapshot.gameState && snapshot.gameState.started) {
+            gameState = snapshot.gameState;
+            hideMyCards = true;
+            showActiveGameUI();
+            renderGameScreen();
+          }
+          joinOnlineRoom(true);
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>
