@@ -8,6 +8,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="icon" type="image/jpeg" href="images/box.jpg" />
   <title>COUP — Tabletop Digital Companion</title>
   <meta name="description" content="2–6 Player Tabletop Digital Companion for COUP with fast multi-broker P2P + WebRTC networking, cookie session persistence, auto-reconnect, and card privacy shield." />
   <meta property="og:title" content="COUP — Tabletop Digital Companion" />
@@ -906,7 +907,7 @@
       <div class="lobby-grid">
         <div class="panel box-showcase">
           <div class="box-cover-wrapper">
-            <img id="lobbyBoxImg" alt="Coup Box Cover"
+            <img id="lobbyBoxImg" src="images/box.jpg" alt="Coup Box Cover"
               onerror="handleImageFallback(this, 'box')" />
           </div>
           <div>
@@ -1255,6 +1256,8 @@
     /*************************************************************************
      * 1. ROLES & IMAGE FOLDER WIRING
      *************************************************************************/
+    const COUPCX04_IMAGE_BASE = 'https://raw.githubusercontent.com/bhaveshbanshiwal/COUPCX04/main/images/';
+
     const ROLES = {
       Duke: { name: 'Duke', color: '#a855f7', file: 'images/duke.jpg' },
       Assassin: { name: 'Assassin', color: '#ef4444', file: 'images/assassin.jpg' },
@@ -1271,8 +1274,20 @@
 
     function handleImageFallback(imgEl, roleKey) {
       const currentSrc = imgEl.getAttribute('src') || '';
-      if (currentSrc.endsWith('.jpg')) {
-        imgEl.src = currentSrc.replace('.jpg', '.png');
+      const fileMap = {
+        box: 'box.jpg',
+        Duke: 'duke.jpg',
+        Assassin: 'assassin.jpg',
+        Captain: 'captain.jpg',
+        Ambassador: 'ambassador.jpg',
+        Contessa: 'contessa.jpg',
+        Hidden: 'back.jpg'
+      };
+      const fileName = fileMap[roleKey] || 'back.jpg';
+      const remoteUrl = COUPCX04_IMAGE_BASE + fileName;
+
+      if (!currentSrc.startsWith('https://raw.githubusercontent.com/')) {
+        imgEl.src = remoteUrl;
         return;
       }
       imgEl.onerror = null;
