@@ -951,6 +951,109 @@
       display: inline-block;
     }
 
+    /* COMPACT MINI-POD EMOJI REACTION PICKER & FLOATING PARTICLES */
+    .pod-react-trigger {
+      margin-left: auto;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: 1px solid rgba(229, 184, 75, 0.42);
+      background: rgba(15, 23, 42, 0.85);
+      color: #fde047;
+      font-size: 0.82rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      flex-shrink: 0;
+      transition: transform 0.14s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .pod-react-trigger:hover {
+      transform: scale(1.12);
+      border-color: #fde047;
+      background: rgba(245, 158, 11, 0.22);
+    }
+
+    .pod-reaction-picker {
+      position: absolute;
+      right: 2px;
+      top: calc(100% + 4px);
+      z-index: 80;
+      display: none;
+      align-items: center;
+      gap: 0.22rem;
+      padding: 0.24rem 0.32rem;
+      border-radius: 9px;
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.98) 0%, rgba(9, 13, 22, 0.99) 100%);
+      border: 1.5px solid #fbbf24;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.85), 0 0 14px rgba(245, 158, 11, 0.35);
+      animation: popIn 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .pod-reaction-picker.open {
+      display: inline-flex;
+    }
+
+    .pod-emoji-opt {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(30, 41, 59, 0.75);
+      font-size: 0.96rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.14s ease, border-color 0.14s ease;
+    }
+
+    .pod-emoji-opt:hover {
+      transform: translateY(-2px) scale(1.2);
+      background: rgba(245, 158, 11, 0.28);
+      border-color: #fde047;
+    }
+
+    .pod-emoji-opt:active {
+      transform: scale(0.92);
+    }
+
+    .fx-emoji-particle {
+      position: fixed;
+      left: 0;
+      top: 0;
+      font-size: 1.55rem;
+      pointer-events: none;
+      z-index: 9998;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.75));
+      will-change: transform, opacity;
+      animation: emojiParticleFloatUp 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes emojiParticleFloatUp {
+      0% {
+        opacity: 1;
+        transform: translate3d(var(--sx, 0px), var(--sy, 0px), 0) scale(0.45) rotate(0deg);
+      }
+      22% {
+        opacity: 1;
+        transform: translate3d(calc(var(--sx, 0px) + var(--dx, 0px) * 0.35), calc(var(--sy, 0px) - 28px), 0) scale(1.22) rotate(calc(var(--drot, 15deg) * 0.5));
+      }
+      78% {
+        opacity: 0.94;
+        transform: translate3d(calc(var(--sx, 0px) + var(--dx, 0px) * 0.85), calc(var(--sy, 0px) + var(--dy, -95px) * 0.85), 0) scale(1.05) rotate(var(--drot, 15deg));
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(calc(var(--sx, 0px) + var(--dx, 0px)), calc(var(--sy, 0px) + var(--dy, -95px)), 0) scale(0.65) rotate(var(--drot, 15deg));
+      }
+    }
+
     .stat-pop {
       animation: statBounce 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -3885,7 +3988,85 @@
       }
     }
 
+    let lastPlayedReactionId = null;
+    let activeOpenReactionPodId = null;
+    const QUICK_REACTIONS = ['🤡', '🔥', '🤝', '👀', '👑', '💀'];
+
+    function togglePodReactionPicker(event, playerId) {
+      if (event) event.stopPropagation();
+      playSfx('tap');
+      activeOpenReactionPodId = (activeOpenReactionPodId === playerId) ? null : playerId;
+      document.querySelectorAll('.pod-reaction-picker').forEach(el => {
+        el.classList.toggle('open', el.getAttribute('data-picker-for') === activeOpenReactionPodId);
+      });
+    }
+
+    function sendEmojiReaction(event, targetPlayerId, emoji) {
+      if (event) event.stopPropagation();
+      activeOpenReactionPodId = null;
+      document.querySelectorAll('.pod-reaction-picker.open').forEach(el => el.classList.remove('open'));
+      sendCommand({
+        action: 'EMOJI_REACTION',
+        senderId: myPlayerId,
+        targetId: targetPlayerId,
+        emoji
+      });
+    }
+
+    document.addEventListener('click', () => {
+      if (activeOpenReactionPodId) {
+        activeOpenReactionPodId = null;
+        document.querySelectorAll('.pod-reaction-picker.open').forEach(el => el.classList.remove('open'));
+      }
+    });
+
+    function spawnEmojiReactionParticles(rx) {
+      if (!rx || !rx.emoji) return;
+      const layer = document.getElementById('tableFxLayer');
+      if (!layer) return;
+
+      playSfx('tap');
+      const targetId = rx.targetId || rx.senderId;
+      const origin = getPodCenter(targetId);
+
+      const labelText = (rx.senderName && rx.targetName && rx.senderId !== rx.targetId)
+        ? `${rx.senderName} → ${rx.targetName}: ${rx.emoji}`
+        : `${rx.senderName || 'Player'}: ${rx.emoji}`;
+      spawnPodFloater(targetId, labelText, 'rgba(30, 41, 59, 0.95)', '#fde047');
+
+      const offsets = [
+        { dx: -44, dy: -92, rot: -26 },
+        { dx: -22, dy: -112, rot: -14 },
+        { dx: 0, dy: -124, rot: 6 },
+        { dx: 24, dy: -108, rot: 18 },
+        { dx: 46, dy: -88, rot: 28 },
+        { dx: -14, dy: -76, rot: -18 },
+        { dx: 16, dy: -80, rot: 14 }
+      ];
+
+      offsets.forEach((vec, idx) => {
+        setTimeout(() => {
+          const pEl = document.createElement('div');
+          pEl.className = 'fx-emoji-particle';
+          pEl.textContent = rx.emoji;
+          pEl.style.setProperty('--sx', `${Math.round(origin.x - 12)}px`);
+          pEl.style.setProperty('--sy', `${Math.round(origin.y - 12)}px`);
+          pEl.style.setProperty('--dx', `${vec.dx}px`);
+          pEl.style.setProperty('--dy', `${vec.dy}px`);
+          pEl.style.setProperty('--drot', `${vec.rot}deg`);
+          layer.appendChild(pEl);
+          setTimeout(() => pEl.remove(), 1400);
+        }, idx * 45);
+      });
+    }
+
     function triggerSynchronizedTableFx() {
+      const rx = gameState.lastReaction;
+      if (rx && rx.id && rx.id !== lastPlayedReactionId) {
+        lastPlayedReactionId = rx.id;
+        spawnEmojiReactionParticles(rx);
+      }
+
       const fx = gameState.tableFx;
       if (!fx || !fx.id || fx.id === lastPlayedFxId) return;
       lastPlayedFxId = fx.id;
@@ -4822,6 +5003,23 @@
         return;
       }
 
+      if (cmd.action === 'EMOJI_REACTION' && cmd.emoji) {
+        const sender = getPlayer(cmd.senderId || senderId) || actor;
+        const target = getPlayer(cmd.targetId || (sender ? sender.id : null)) || sender;
+        if (sender && target) {
+          gameState.lastReaction = {
+            id: makeMsgId(),
+            senderId: sender.id,
+            senderName: sender.name,
+            targetId: target.id,
+            targetName: target.name,
+            emoji: String(cmd.emoji).slice(0, 6)
+          };
+          syncStateToAll();
+        }
+        return;
+      }
+
       // 1. DECLARE TURN ACTION
       if (cmd.action === 'DECLARE_ACTION' && gameState.phase === 'TURN_DECISION') {
         if (senderId !== actor.id && gameMode !== 'local') return;
@@ -5452,6 +5650,11 @@
         el.className = `mini-pod ${isTurn ? 'active-turn' : ''} ${!p.alive ? 'eliminated' : ''} ${coinDiff > 0 ? 'pod-gain-flash' : ''}`;
         el.setAttribute('data-player-id', p.id);
 
+        const isPickerOpen = activeOpenReactionPodId === p.id;
+        const pickerButtonsHtml = QUICK_REACTIONS.map(em =>
+          `<button type="button" class="pod-emoji-opt" onclick="sendEmojiReaction(event, '${p.id}', '${em}')" title="Send ${em}">${em}</button>`
+        ).join('');
+
         el.innerHTML = `
           <div style="display:flex; align-items:center; justify-content:space-between; gap:0.25rem;">
             <span style="font-weight:700; font-size:0.82rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(p.name)}</span>
@@ -5464,6 +5667,10 @@
             <span><span class="pod-icon">🎴</span><strong class="pod-num ${cardDiff !== 0 ? 'stat-pop' : ''}">${activeCards}</strong></span>
             <span>•</span>
             <span><span class="pod-icon">🪙</span><strong class="pod-coin-num ${coinDiff !== 0 ? 'stat-pop' : ''}">${p.coins}</strong></span>
+            <button type="button" class="pod-react-trigger" onclick="togglePodReactionPicker(event, '${p.id}')" title="Send Public Reaction">😊</button>
+          </div>
+          <div class="pod-reaction-picker ${isPickerOpen ? 'open' : ''}" data-picker-for="${p.id}">
+            ${pickerButtonsHtml}
           </div>
         `;
         grid.appendChild(el);
