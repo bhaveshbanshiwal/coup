@@ -10,9 +10,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="icon" type="image/jpeg" href="images/box.jpg" />
   <title>COUP — Tabletop Digital Companion</title>
-  <meta name="description" content="2–6 Player Tabletop Digital Companion for COUP with fast multi-broker P2P + WebRTC networking, cookie session persistence, auto-reconnect, and card privacy shield." />
+  <meta name="description" content="2–6 Player Tabletop Digital Companion for COUP with fast multi-broker P2P + WebRTC networking, live 60fps table animations, cookie session persistence, and card privacy shield." />
   <meta property="og:title" content="COUP — Tabletop Digital Companion" />
-  <meta property="og:description" content="2–6 Player Tabletop Digital Companion for COUP with fast multi-broker P2P + WebRTC networking, cookie session persistence, auto-reconnect, and card privacy shield." />
+  <meta property="og:description" content="2–6 Player Tabletop Digital Companion for COUP with fast multi-broker P2P + WebRTC networking, live 60fps table animations, cookie session persistence, and card privacy shield." />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
 
@@ -97,10 +97,10 @@
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.35rem;
     }
 
-    /* SQUARISH BUTTONS */
+    /* SQUARISH TACTILE BUTTONS (GPU-ACCELERATED, ZERO LAG) */
     .btn {
       padding: 0.4rem 0.68rem;
       border-radius: var(--sq-radius);
@@ -110,16 +110,23 @@
       border: 1px solid rgba(255, 255, 255, 0.16);
       background: var(--bg-card);
       color: var(--text-main);
-      transition: all 0.14s ease;
+      transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.14s ease, filter 0.14s ease;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 0.28rem;
       white-space: nowrap;
+      will-change: transform;
+      user-select: none;
     }
 
     .btn:hover:not(:disabled) {
       border-color: var(--border-gold);
+      filter: brightness(1.08);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: scale(0.94);
     }
 
     .btn:disabled {
@@ -155,6 +162,7 @@
       flex-direction: column;
       overflow-y: auto;
       overflow-x: hidden;
+      will-change: transform;
     }
 
     body.lobby-mode main {
@@ -202,6 +210,11 @@
       overflow: hidden;
       border: 2px solid var(--border-gold);
       background: #1a1528;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .box-cover-wrapper:hover {
+      transform: translateY(-3px) scale(1.02);
     }
 
     .box-cover-wrapper img {
@@ -255,6 +268,11 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 0.78rem;
+      transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .mode-tab:active {
+      transform: scale(0.97);
     }
 
     .mode-tab.active {
@@ -291,11 +309,13 @@
       display: flex;
       align-items: center;
       gap: 0.45rem;
+      transition: transform 0.18s ease, border-color 0.18s ease;
     }
 
     .lobby-seat.occupied {
       border-color: rgba(245, 158, 11, 0.5);
       background: rgba(245, 158, 11, 0.06);
+      animation: popIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .seat-num {
@@ -333,12 +353,13 @@
       padding: 0.36rem 0.68rem;
       flex-shrink: 0;
       box-shadow: 0 2px 10px rgba(225, 29, 72, 0.35);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .turn-top-bar.my-turn-active {
       background: linear-gradient(90deg, #991b1b 0%, #e11d48 50%, #991b1b 100%);
       border-color: #fda4af;
-      box-shadow: 0 0 12px rgba(244, 63, 94, 0.65);
+      box-shadow: 0 0 14px rgba(244, 63, 94, 0.7);
     }
 
     .turn-indicator-left {
@@ -375,6 +396,16 @@
       flex-shrink: 0;
     }
 
+    .court-mini-stats > span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.08rem 0.32rem;
+      border-radius: 3px;
+      background: rgba(0, 0, 0, 0.22);
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
     .court-mini-stats .stat-icon {
       font-size: 0.98rem;
     }
@@ -395,6 +426,7 @@
       flex-direction: column;
       gap: 0.36rem;
       flex-shrink: 0;
+      animation: slideDownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .phase-title {
@@ -427,7 +459,7 @@
       justify-content: center;
       gap: 0.14rem;
       text-align: center;
-      transition: all 0.14s ease;
+      transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.14s ease, filter 0.14s ease;
       line-height: 1.15;
     }
 
@@ -455,6 +487,7 @@
       justify-content: space-between;
       gap: 0.55rem;
       flex-shrink: 0;
+      animation: popIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .proof-card-thumb {
@@ -467,7 +500,7 @@
       flex-shrink: 0;
     }
 
-    /* COMPACT PLAYER PODS ROW (LARGER COINS/CARDS ICONS & FONTS) */
+    /* COMPACT PLAYER PODS ROW (LARGER COINS/CARDS ICONS & FONTS + LIVE DELTAS) */
     #compactSeatsGrid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
@@ -483,16 +516,29 @@
       display: flex;
       flex-direction: column;
       gap: 0.18rem;
+      position: relative;
+      overflow: visible;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, background 0.2s ease;
+      will-change: transform;
     }
 
     .mini-pod.active-turn {
       border-color: #f43f5e;
-      background: rgba(225, 29, 72, 0.16);
+      background: rgba(225, 29, 72, 0.18);
+      box-shadow: 0 0 10px rgba(244, 63, 94, 0.25);
     }
 
     .mini-pod.eliminated {
       opacity: 0.38;
       filter: grayscale(0.85);
+    }
+
+    .mini-pod.pod-hit-flash {
+      animation: podHitShake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    }
+
+    .mini-pod.pod-gain-flash {
+      animation: podGainPulse 0.38s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .mini-pod-stats {
@@ -514,12 +560,20 @@
       font-weight: 800;
       font-size: 0.96rem;
       color: #f9fafb;
+      display: inline-block;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .mini-pod-stats .pod-coin-num {
       font-weight: 800;
       font-size: 1rem;
       color: #fde047;
+      display: inline-block;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .stat-pop {
+      animation: statBounce 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .badge {
@@ -560,6 +614,7 @@
       border: 2px solid #fda4af !important;
       color: #fff !important;
       box-shadow: 0 0 14px rgba(244, 63, 94, 0.55);
+      animation: urgentPulse 1.1s ease-in-out infinite alternate;
     }
 
     .cards-row {
@@ -570,6 +625,7 @@
       flex-shrink: 0;
       margin: 0.1rem auto;
       width: 100%;
+      animation: slideDownFade 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     /* FULL VERTICAL PORTRAIT CARDS (5:7 RATIO, UNCROPPED) */
@@ -587,6 +643,8 @@
       background: #0d111a;
       margin: 0 auto;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+      transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease;
+      will-change: transform;
     }
 
     .influence-card.selectable {
@@ -596,8 +654,12 @@
     }
 
     .influence-card.selectable:hover {
-      transform: translateY(-2px);
+      transform: translateY(-3px) scale(1.02);
       border-color: #fda4af;
+    }
+
+    .influence-card.selectable:active {
+      transform: scale(0.95);
     }
 
     .influence-card.returned-slot {
@@ -648,6 +710,11 @@
       border-radius: var(--sq-radius);
       padding: 0.48rem;
       flex-shrink: 0;
+      transition: border-color 0.2s ease;
+    }
+
+    .command-panel.my-turn-ready {
+      border-color: rgba(245, 158, 11, 0.55);
     }
 
     .action-category-title {
@@ -685,7 +752,7 @@
       text-align: center;
       cursor: pointer;
       color: var(--text-main);
-      transition: all 0.12s ease;
+      transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.14s ease, background 0.14s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -694,11 +761,18 @@
       min-height: 54px;
       position: relative;
       overflow: hidden;
+      will-change: transform;
+      user-select: none;
     }
 
     .action-btn:hover:not(:disabled) {
       border-color: var(--accent-gold);
       background: #1e283c;
+      transform: translateY(-1px);
+    }
+
+    .action-btn:active:not(:disabled) {
+      transform: scale(0.94);
     }
 
     .action-btn:disabled {
@@ -777,6 +851,10 @@
       line-height: 1.26;
     }
 
+    .log-entry:first-child {
+      animation: slideDownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
     .log-entry.claim {
       border-left-color: #f59e0b;
     }
@@ -835,6 +913,7 @@
       overflow-y: auto;
       padding: 0.9rem;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+      animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .modal-header {
@@ -875,10 +954,224 @@
       gap: 0.3rem;
       font-size: 0.72rem;
     }
+
+    /* ================= 60FPS GPU-ACCELERATED TABLETOP FX OVERLAY ================= */
+    #tableFxLayer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 150;
+      overflow: hidden;
+    }
+
+    /* Screen impact flash (opacity only, zero layout repaint) */
+    .fx-screen-flash {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      will-change: opacity;
+      animation: fxFlashOut 0.48s ease-out forwards;
+    }
+
+    /* Center kinetic banner for Coup / Assassinate / Lost Card */
+    .fx-kinetic-banner {
+      position: absolute;
+      left: 50%;
+      top: 22%;
+      transform: translate3d(-50%, -50%, 0) scale(0.75);
+      padding: 0.55rem 1.05rem;
+      border-radius: var(--sq-radius);
+      font-family: 'Cinzel', serif;
+      font-weight: 900;
+      font-size: 0.96rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #fff;
+      text-align: center;
+      white-space: nowrap;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75);
+      will-change: transform, opacity;
+      animation: fxBannerPop 0.92s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .fx-kinetic-sub {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-top: 0.15rem;
+      opacity: 0.95;
+    }
+
+    /* Flying Lost Card from Player Pod to Court Deck */
+    .fx-flying-card {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 58px;
+      height: 82px;
+      margin-left: -29px;
+      margin-top: -41px;
+      border-radius: 5px;
+      border: 2px solid #f43f5e;
+      background: #0d111a;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.8);
+      overflow: hidden;
+      will-change: transform, opacity;
+      transition: transform 0.68s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.68s ease-in;
+    }
+
+    .fx-flying-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Flying Coin Token */
+    .fx-flying-coin {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 24px;
+      height: 24px;
+      margin-left: -12px;
+      margin-top: -12px;
+      font-size: 1.15rem;
+      line-height: 24px;
+      text-align: center;
+      will-change: transform, opacity;
+      transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.55s ease-in;
+    }
+
+    /* Assassinate Dagger Slash SVG Overlay */
+    .fx-slash-box {
+      position: fixed;
+      width: 120px;
+      height: 120px;
+      margin-left: -60px;
+      margin-top: -60px;
+      will-change: transform, opacity;
+      animation: fxSlashStrike 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Coup Target Shockwave Ring */
+    .fx-shockwave-ring {
+      position: fixed;
+      width: 90px;
+      height: 90px;
+      margin-left: -45px;
+      margin-top: -45px;
+      border-radius: 50%;
+      border: 3px solid #f43f5e;
+      will-change: transform, opacity;
+      animation: fxRingExpand 0.58s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Floating Delta Badge (+3 🪙, -7 🪙, -1 🎴) over Player Pods */
+    .fx-pod-floater {
+      position: fixed;
+      transform: translate3d(-50%, 0, 0);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 0.84rem;
+      padding: 0.14rem 0.42rem;
+      border-radius: 3px;
+      white-space: nowrap;
+      z-index: 160;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      will-change: transform, opacity;
+      animation: fxFloatUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .screen-shake-coup {
+      animation: screenShake 0.36s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.92); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes slideDownFade {
+      0% { opacity: 0; transform: translate3d(0, -6px, 0); }
+      100% { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+
+    @keyframes statBounce {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.32); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes podHitShake {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      20% { transform: translate3d(-5px, 2px, 0); border-color: #f43f5e; background: rgba(225, 29, 72, 0.35); }
+      45% { transform: translate3d(5px, -2px, 0); }
+      70% { transform: translate3d(-3px, 1px, 0); }
+    }
+
+    @keyframes podGainPulse {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.04); border-color: #fbbf24; }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes urgentPulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.015); }
+    }
+
+    @keyframes fxFlashOut {
+      0% { opacity: 0.55; }
+      100% { opacity: 0; }
+    }
+
+    @keyframes fxBannerPop {
+      0% { opacity: 0; transform: translate3d(-50%, -40%, 0) scale(0.72); }
+      18% { opacity: 1; transform: translate3d(-50%, -50%, 0) scale(1.04); }
+      30% { opacity: 1; transform: translate3d(-50%, -50%, 0) scale(1); }
+      82% { opacity: 1; transform: translate3d(-50%, -50%, 0) scale(1); }
+      100% { opacity: 0; transform: translate3d(-50%, -62%, 0) scale(0.94); }
+    }
+
+    @keyframes fxSlashStrike {
+      0% { opacity: 0; transform: scale(0.4) rotate(-25deg); }
+      30% { opacity: 1; transform: scale(1.1) rotate(0deg); }
+      100% { opacity: 0; transform: scale(1.25) rotate(8deg); }
+    }
+
+    @keyframes fxRingExpand {
+      0% { opacity: 0.95; transform: scale(0.25); }
+      100% { opacity: 0; transform: scale(1.75); }
+    }
+
+    @keyframes fxFloatUp {
+      0% { opacity: 0; transform: translate3d(-50%, 6px, 0) scale(0.85); }
+      20% { opacity: 1; transform: translate3d(-50%, -4px, 0) scale(1.05); }
+      100% { opacity: 0; transform: translate3d(-50%, -28px, 0) scale(0.95); }
+    }
+
+    @keyframes screenShake {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      20% { transform: translate3d(-6px, 3px, 0); }
+      40% { transform: translate3d(6px, -3px, 0); }
+      60% { transform: translate3d(-4px, -2px, 0); }
+      80% { transform: translate3d(4px, 2px, 0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
   </style>
 </head>
 
 <body class="lobby-mode">
+
+  <!-- GPU-ACCELERATED TABLE FX LAYER (COUP, ASSASSINATE, LOST CARDS, FLOATING COINS) -->
+  <div id="tableFxLayer"></div>
 
   <!-- TOP BAR -->
   <header>
@@ -895,12 +1188,13 @@
           onchange="switchLocalPerspective(this.value)"></select>
       </div>
 
+      <button id="soundToggleBtn" class="btn" onclick="toggleSoundFx()" title="Toggle Sound Effects">🔊 SFX</button>
       <button class="btn btn-gold" onclick="openModal('rulesModal')">📜 Rules</button>
       <button id="leaveBtn" class="btn btn-crimson" style="display:none;" onclick="resetToLobby()">🚪 Leave</button>
     </div>
   </header>
 
-  <main>
+  <main id="mainViewport">
 
     <!-- ================= LOBBY SCREEN ================= -->
     <section id="lobbyScreen">
@@ -990,8 +1284,8 @@
           <span id="turnStatusHeader">WAITING...</span>
         </div>
         <div class="court-mini-stats">
-          <span><span class="stat-icon">🪙</span> <strong id="treasuryCoinsText">50</strong></span>
-          <span><span class="stat-icon">🎴</span> <strong id="courtDeckCountText">15</strong></span>
+          <span id="treasuryBadgeBox"><span class="stat-icon">🪙</span> <strong id="treasuryCoinsText">50</strong></span>
+          <span id="courtDeckBadgeBox"><span class="stat-icon">🎴</span> <strong id="courtDeckCountText">15</strong></span>
         </div>
       </div>
 
@@ -1026,7 +1320,7 @@
       <div id="myCardsArea" class="cards-row" style="display:none;"></div>
 
       <!-- Turn Actions & Single-Line Character Claims Panel -->
-      <div class="command-panel">
+      <div id="commandPanelBox" class="command-panel">
         <div class="action-category-title">
           <span>General Actions</span>
           <span id="mandatoryCoupWarning" style="display:none; color:#fb7185; font-size:0.68rem; font-weight:700;">
@@ -1156,7 +1450,7 @@
     </div>
   </div>
 
-  <!-- ================= GAME ENGINE & NETWORKING SCRIPT ================= -->
+  <!-- ================= GAME ENGINE, ANIMATIONS & NETWORKING SCRIPT ================= -->
   <script>
     /*************************************************************************
      * 0. COOKIE & LOCALSTORAGE PERSISTENCE (GITHUB PAGES STATIC COMPATIBLE)
@@ -1254,6 +1548,421 @@
     }
 
     /*************************************************************************
+     * 0B. ZERO-MEMORY WEB AUDIO SYNTHESIZER & 60FPS TABLE FX ENGINE
+     *************************************************************************/
+    let soundFxEnabled = getPersistentValue('coup_sfx') !== 'off';
+    let audioCtx = null;
+
+    function getAudioCtx() {
+      if (!soundFxEnabled) return null;
+      try {
+        if (!audioCtx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) audioCtx = new AC();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function toggleSoundFx() {
+      soundFxEnabled = !soundFxEnabled;
+      setPersistentValue('coup_sfx', soundFxEnabled ? 'on' : 'off', 365);
+      updateSoundToggleBtn();
+      if (soundFxEnabled) playSfx('tap');
+    }
+
+    function updateSoundToggleBtn() {
+      const btn = document.getElementById('soundToggleBtn');
+      if (btn) {
+        btn.textContent = soundFxEnabled ? '🔊 SFX' : '🔇 Mute';
+        btn.style.opacity = soundFxEnabled ? '1' : '0.6';
+      }
+    }
+
+    function playSfx(kind) {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      try {
+        const now = ctx.currentTime;
+        if (kind === 'tap') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(240, now + 0.045);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.05);
+        } else if (kind === 'coin') {
+          [987.77, 1318.51].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + i * 0.055);
+            gain.gain.setValueAtTime(0.08, now + i * 0.055);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.055 + 0.16);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + i * 0.055);
+            osc.stop(now + i * 0.055 + 0.17);
+          });
+        } else if (kind === 'coup') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.exponentialRampToValueAtTime(38, now + 0.34);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.37);
+        } else if (kind === 'slash') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(920, now);
+          osc.frequency.exponentialRampToValueAtTime(180, now + 0.18);
+          gain.gain.setValueAtTime(0.11, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        } else if (kind === 'card_lost') {
+          [380, 260].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + i * 0.08);
+            osc.frequency.exponentialRampToValueAtTime(freq * 0.65, now + i * 0.08 + 0.18);
+            gain.gain.setValueAtTime(0.11, now + i * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.19);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + i * 0.08);
+            osc.stop(now + i * 0.08 + 0.2);
+          });
+        } else if (kind === 'block') {
+          [440, 659.25].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + i * 0.06);
+            gain.gain.setValueAtTime(0.1, now + i * 0.06);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.18);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + i * 0.06);
+            osc.stop(now + i * 0.06 + 0.19);
+          });
+        } else if (kind === 'win') {
+          [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + i * 0.08);
+            gain.gain.setValueAtTime(0.09, now + i * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.25);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + i * 0.08);
+            osc.stop(now + i * 0.08 + 0.26);
+          });
+        }
+      } catch (e) { }
+    }
+
+    let lastPlayedFxId = null;
+    let prevPodStats = {}; // playerId -> { coins, cards }
+
+    function emitTableFx(type, payload = {}) {
+      gameState.tableFx = {
+        id: Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7),
+        type,
+        actorId: payload.actorId || null,
+        actorName: payload.actorName || '',
+        targetId: payload.targetId || null,
+        targetName: payload.targetName || '',
+        reason: payload.reason || '',
+        amount: payload.amount || 0
+      };
+    }
+
+    function getPodCenter(playerId) {
+      const pod = document.querySelector(`.mini-pod[data-player-id="${playerId}"]`);
+      if (pod) {
+        const r = pod.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2, el: pod };
+      }
+      return { x: window.innerWidth / 2, y: window.innerHeight * 0.35, el: null };
+    }
+
+    function getElementCenter(elId) {
+      const el = document.getElementById(elId);
+      if (el) {
+        const r = el.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2, el };
+      }
+      return { x: window.innerWidth - 50, y: 65, el: null };
+    }
+
+    function spawnPodFloater(playerId, text, bgColor, textColor = '#fff') {
+      const layer = document.getElementById('tableFxLayer');
+      if (!layer) return;
+      const pos = getPodCenter(playerId);
+      const floater = document.createElement('div');
+      floater.className = 'fx-pod-floater';
+      floater.style.left = `${pos.x}px`;
+      floater.style.top = `${Math.max(24, pos.y - 12)}px`;
+      floater.style.background = bgColor;
+      floater.style.color = textColor;
+      floater.style.border = '1px solid rgba(255,255,255,0.28)';
+      floater.textContent = text;
+      layer.appendChild(floater);
+      setTimeout(() => floater.remove(), 880);
+    }
+
+    function spawnKineticBanner(titleText, subText, gradientBg, borderColor) {
+      const layer = document.getElementById('tableFxLayer');
+      if (!layer) return;
+      const banner = document.createElement('div');
+      banner.className = 'fx-kinetic-banner';
+      banner.style.background = gradientBg;
+      banner.style.border = `1.5px solid ${borderColor}`;
+      banner.innerHTML = `
+        <div>${escapeHtml(titleText)}</div>
+        ${subText ? `<div class="fx-kinetic-sub">${escapeHtml(subText)}</div>` : ''}
+      `;
+      layer.appendChild(banner);
+      setTimeout(() => banner.remove(), 950);
+    }
+
+    function spawnScreenFlash(colorCss) {
+      const layer = document.getElementById('tableFxLayer');
+      if (!layer) return;
+      const flash = document.createElement('div');
+      flash.className = 'fx-screen-flash';
+      flash.style.background = colorCss;
+      layer.appendChild(flash);
+      setTimeout(() => flash.remove(), 500);
+    }
+
+    function spawnFlyingCardToDeck(fromPlayerId) {
+      const layer = document.getElementById('tableFxLayer');
+      if (!layer) return;
+      const start = getPodCenter(fromPlayerId);
+      const end = getElementCenter('courtDeckBadgeBox');
+
+      const cardEl = document.createElement('div');
+      cardEl.className = 'fx-flying-card';
+      cardEl.style.transform = `translate3d(${start.x}px, ${start.y}px, 0) scale(1) rotate(-8deg)`;
+      cardEl.innerHTML = `<img src="${getCardImageSrc('Hidden')}" alt="Lost Card" onerror="handleImageFallback(this, 'Hidden')" />`;
+      layer.appendChild(cardEl);
+
+      // Ring at player pod
+      const ring = document.createElement('div');
+      ring.className = 'fx-shockwave-ring';
+      ring.style.left = `${start.x}px`;
+      ring.style.top = `${start.y}px`;
+      layer.appendChild(ring);
+      setTimeout(() => ring.remove(), 600);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          cardEl.style.transform = `translate3d(${end.x}px, ${end.y}px, 0) scale(0.32) rotate(180deg)`;
+          cardEl.style.opacity = '0.15';
+        });
+      });
+
+      setTimeout(() => {
+        cardEl.remove();
+        if (end.el) {
+          end.el.classList.remove('stat-pop');
+          void end.el.offsetWidth;
+          end.el.classList.add('stat-pop');
+        }
+      }, 700);
+    }
+
+    function spawnFlyingCoins(fromPoint, toPoint, count = 3) {
+      const layer = document.getElementById('tableFxLayer');
+      if (!layer) return;
+      const num = Math.min(4, Math.max(1, count));
+      for (let i = 0; i < num; i++) {
+        setTimeout(() => {
+          const coin = document.createElement('div');
+          coin.className = 'fx-flying-coin';
+          coin.textContent = '🪙';
+          const jitterX = (i - (num - 1) / 2) * 14;
+          coin.style.transform = `translate3d(${fromPoint.x + jitterX}px, ${fromPoint.y}px, 0) scale(1)`;
+          layer.appendChild(coin);
+
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              coin.style.transform = `translate3d(${toPoint.x}px, ${toPoint.y}px, 0) scale(0.65)`;
+              coin.style.opacity = '0.2';
+            });
+          });
+
+          setTimeout(() => coin.remove(), 580);
+        }, i * 55);
+      }
+    }
+
+    function spawnAssassinSlash(targetPlayerId) {
+      const layer = document.getElementById('tableFxLayer');
+      if (!layer) return;
+      const pos = getPodCenter(targetPlayerId);
+      const slash = document.createElement('div');
+      slash.className = 'fx-slash-box';
+      slash.style.left = `${pos.x}px`;
+      slash.style.top = `${pos.y}px`;
+      slash.innerHTML = `
+        <svg viewBox="0 0 120 120" width="120" height="120">
+          <line x1="12" y1="108" x2="108" y2="12" stroke="#f43f5e" stroke-width="6" stroke-linecap="round" />
+          <line x1="22" y1="102" x2="102" y2="22" stroke="#fff" stroke-width="2.5" stroke-linecap="round" />
+        </svg>
+      `;
+      layer.appendChild(slash);
+      setTimeout(() => slash.remove(), 550);
+    }
+
+    function triggerSynchronizedTableFx() {
+      const fx = gameState.tableFx;
+      if (!fx || !fx.id || fx.id === lastPlayedFxId) return;
+      lastPlayedFxId = fx.id;
+
+      const mainEl = document.getElementById('mainViewport');
+
+      if (fx.type === 'COUP') {
+        playSfx('coup');
+        spawnScreenFlash('radial-gradient(circle, rgba(225,29,72,0.45) 0%, transparent 75%)');
+        if (mainEl) {
+          mainEl.classList.remove('screen-shake-coup');
+          void mainEl.offsetWidth;
+          mainEl.classList.add('screen-shake-coup');
+        }
+        spawnKineticBanner(
+          `💥 COUP! ${fx.actorName} → ${fx.targetName}`,
+          `-7 Coins • Unblockable Strike`,
+          'linear-gradient(135deg, #991b1b 0%, #e11d48 100%)',
+          '#fda4af'
+        );
+        if (fx.actorId) {
+          spawnFlyingCoins(getPodCenter(fx.actorId), getElementCenter('treasuryBadgeBox'), 4);
+        }
+        if (fx.targetId) {
+          const tPos = getPodCenter(fx.targetId);
+          if (tPos.el) {
+            tPos.el.classList.remove('pod-hit-flash');
+            void tPos.el.offsetWidth;
+            tPos.el.classList.add('pod-hit-flash');
+          }
+          const ring = document.createElement('div');
+          ring.className = 'fx-shockwave-ring';
+          ring.style.left = `${tPos.x}px`;
+          ring.style.top = `${tPos.y}px`;
+          document.getElementById('tableFxLayer').appendChild(ring);
+          setTimeout(() => ring.remove(), 600);
+        }
+      } else if (fx.type === 'ASSASSINATE_CLAIM' || fx.type === 'ASSASSINATE_HIT') {
+        playSfx('slash');
+        spawnScreenFlash('radial-gradient(circle, rgba(190,18,60,0.38) 0%, transparent 75%)');
+        spawnKineticBanner(
+          fx.type === 'ASSASSINATE_HIT'
+            ? `🗡️ ASSASSINATION LANDS ON ${fx.targetName}!`
+            : `🔴 ${fx.actorName} ASSASSINATES ${fx.targetName}!`,
+          fx.type === 'ASSASSINATE_HIT' ? `Target must dump 1 card` : `-3 Coins • Call Bluff or Block (Contessa)`,
+          'linear-gradient(135deg, #450a0a 0%, #be123c 100%)',
+          '#fb7185'
+        );
+        if (fx.targetId) {
+          spawnAssassinSlash(fx.targetId);
+          const tPos = getPodCenter(fx.targetId);
+          if (tPos.el) {
+            tPos.el.classList.remove('pod-hit-flash');
+            void tPos.el.offsetWidth;
+            tPos.el.classList.add('pod-hit-flash');
+          }
+        }
+      } else if (fx.type === 'CARD_LOST' || fx.type === 'ELIMINATED') {
+        playSfx('card_lost');
+        if (fx.targetId) {
+          spawnFlyingCardToDeck(fx.targetId);
+          const tPos = getPodCenter(fx.targetId);
+          if (tPos.el) {
+            tPos.el.classList.remove('pod-hit-flash');
+            void tPos.el.offsetWidth;
+            tPos.el.classList.add('pod-hit-flash');
+          }
+        }
+        spawnKineticBanner(
+          fx.type === 'ELIMINATED'
+            ? `⚰️ ${fx.targetName} IS ELIMINATED!`
+            : `📥 ${fx.targetName} DUMPED 1 CARD!`,
+          fx.reason || 'Returned to Court Deck Bottom',
+          fx.type === 'ELIMINATED'
+            ? 'linear-gradient(135deg, #1f2937 0%, #7f1d1d 100%)'
+            : 'linear-gradient(135deg, #881337 0%, #be123c 100%)',
+          '#fda4af'
+        );
+      } else if (fx.type === 'BLOCK') {
+        playSfx('block');
+        spawnKineticBanner(
+          `🛡️ ${fx.actorName} BLOCKS!`,
+          fx.reason || 'Counteraction declared',
+          'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+          '#93c5fd'
+        );
+      } else if (fx.type === 'BLUFF_CAUGHT') {
+        playSfx('coup');
+        spawnScreenFlash('radial-gradient(circle, rgba(239,68,68,0.4) 0%, transparent 75%)');
+        spawnKineticBanner(
+          `❌ BLUFF CAUGHT!`,
+          `${fx.targetName} loses 1 card!`,
+          'linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)',
+          '#fca5a5'
+        );
+      } else if (fx.type === 'NO_BLUFF') {
+        playSfx('win');
+        spawnKineticBanner(
+          `✅ NO BLUFF — PROVEN!`,
+          `${fx.actorName} showed ${fx.reason}!`,
+          'linear-gradient(135deg, #065f46 0%, #059669 100%)',
+          '#6ee7b7'
+        );
+      } else if (fx.type === 'STEAL') {
+        playSfx('coin');
+        if (fx.targetId && fx.actorId && fx.amount > 0) {
+          spawnFlyingCoins(getPodCenter(fx.targetId), getPodCenter(fx.actorId), fx.amount);
+        }
+      } else if (fx.type === 'COINS_GAIN') {
+        playSfx('coin');
+        if (fx.actorId && fx.amount > 0) {
+          spawnFlyingCoins(getElementCenter('treasuryBadgeBox'), getPodCenter(fx.actorId), fx.amount);
+        }
+      } else if (fx.type === 'VICTORY') {
+        playSfx('win');
+        spawnKineticBanner(
+          `🏆 ${fx.actorName} WINS THE TABLE!`,
+          `Last Influence Standing`,
+          'linear-gradient(135deg, #b45309 0%, #f59e0b 100%)',
+          '#fde047'
+        );
+      }
+    }
+
+    /*************************************************************************
      * 1. ROLES & IMAGE FOLDER WIRING
      *************************************************************************/
     const COUPCX04_IMAGE_BASE = 'https://raw.githubusercontent.com/bhaveshbanshiwal/COUPCX04/main/images/';
@@ -1328,6 +2037,7 @@
       lossQueue: [],
       exchangeData: null,
       proofReveal: null,
+      tableFx: null,
       logs: []
     };
 
@@ -1365,11 +2075,13 @@
     }
 
     function toggleCardPrivacy() {
+      playSfx('tap');
       hideMyCards = !hideMyCards;
       renderGameScreen();
     }
 
     function selectLobbyTab(mode) {
+      playSfx('tap');
       gameMode = mode;
       document.getElementById('tabOnline').classList.toggle('active', mode === 'online');
       document.getElementById('tabLocal').classList.toggle('active', mode === 'local');
@@ -1377,10 +2089,8 @@
       document.getElementById('localControls').style.display = mode === 'local' ? 'block' : 'none';
       if (mode === 'local') {
         lobbyPlayers = [];
-        renderLobbySeats();
-      } else {
-        renderLobbySeats();
       }
+      renderLobbySeats();
     }
 
     function renderLobbySeats() {
@@ -1434,6 +2144,7 @@
 
     function addLocalPlayer() {
       if (lobbyPlayers.length >= 6) return alert('Max 6 players reached!');
+      playSfx('tap');
       const input = document.getElementById('localPlayerNameInput');
       const name = input.value.trim() || `Player ${lobbyPlayers.length + 1}`;
       lobbyPlayers.push({ id: 'local_' + Date.now() + '_' + lobbyPlayers.length, name });
@@ -1444,6 +2155,7 @@
     }
 
     function fillDemoPlayers() {
+      playSfx('tap');
       lobbyPlayers = [
         { id: 'p1', name: 'Bhavesh' },
         { id: 'p2', name: 'Aarav' },
@@ -1520,7 +2232,6 @@
             broadcastLobbyState();
           }
         } else {
-          // Ensure at least one broker or peer is connected; if not, reconnect transparently
           const anyMqttConnected = mqttClients.some(c => {
             try { return c && c.isConnected(); } catch (e) { return false; }
           });
@@ -1574,7 +2285,6 @@
             if (onReadyCallback) onReadyCallback();
           },
           onFailure: () => {
-            // Other parallel brokers handle connection seamlessly; retry quietly in background
             setTimeout(() => {
               if (currentRoomCode && gameMode === 'online' && mqttClients.length === 0) {
                 connectSingleBroker(broker, idx, onReadyCallback);
@@ -1657,7 +2367,6 @@
       const enriched = Object.assign({}, data, { _msgId: makeMsgId() });
       seenMessageIds.add(enriched._msgId);
 
-      // 1. Publish across all connected MQTT brokers simultaneously
       const payloadStr = JSON.stringify(enriched);
       mqttClients.forEach(client => {
         try {
@@ -1671,7 +2380,6 @@
         } catch (e) { }
       });
 
-      // 2. Simultaneously send over PeerJS WebRTC DataChannel
       try {
         if (isHost) {
           Object.values(hostPeerConns).forEach(conn => {
@@ -1686,6 +2394,7 @@
     }
 
     function hostOnlineRoom(restoredRoomCode = null) {
+      playSfx('tap');
       const nameInput = document.getElementById('playerNameInput');
       const name = (nameInput.value.trim() || getPersistentValue('coup_username') || 'Host').slice(0, 18);
       nameInput.value = name;
@@ -1739,7 +2448,6 @@
         const playerName = (data.name || 'Player').trim().slice(0, 18);
         const incomingId = data.id;
 
-        // If game is already in progress, allow existing players to reconnect without duplicating!
         if (gameState.started) {
           let existingPlayer = gameState.players.find(p => p.id === incomingId);
           if (!existingPlayer && playerName) {
@@ -1751,7 +2459,6 @@
             existingPlayer.id = incomingId;
             existingPlayer.name = playerName || existingPlayer.name;
 
-            // Keep references updated if player's ID was refreshed
             if (oldId !== incomingId) {
               const lp = lobbyPlayers.find(p => p.id === oldId);
               if (lp) lp.id = incomingId;
@@ -1786,7 +2493,6 @@
           return;
         }
 
-        // In Lobby: deduplicate by Player ID OR matching Player Name so reload never duplicates a seat
         let existingLobbySeat = lobbyPlayers.find(p => p.id === incomingId);
         if (!existingLobbySeat && playerName) {
           existingLobbySeat = lobbyPlayers.find(p => p.name.toLowerCase() === playerName.toLowerCase());
@@ -1801,6 +2507,7 @@
             return;
           }
           lobbyPlayers.push({ id: incomingId, name: playerName });
+          playSfx('tap');
         } else {
           existingLobbySeat.id = incomingId;
           existingLobbySeat.name = playerName;
@@ -1820,6 +2527,7 @@
     }
 
     function joinOnlineRoom(isAutoReconnect = false) {
+      if (!isAutoReconnect) playSfx('tap');
       const nameInput = document.getElementById('playerNameInput');
       const name = (nameInput.value.trim() || getPersistentValue('coup_username')).trim();
       if (!name) {
@@ -1908,7 +2616,6 @@
           sendJoinPulse();
           setTimeout(sendJoinPulse, 250);
           if (joinRetryTimer) clearInterval(joinRetryTimer);
-          // Continuous fast handshake every 600ms until seated so connection never gets stuck
           joinRetryTimer = setInterval(() => {
             if (!isSeated && currentRoomCode === code && !isHost) {
               sendJoinPulse();
@@ -1963,6 +2670,7 @@
     }
 
     function sendCommand(command) {
+      playSfx('tap');
       if (gameMode === 'local' || isHost) {
         processPlayerCommand(myPlayerId, command);
       } else {
@@ -2007,10 +2715,12 @@
 
     function startGame() {
       if (lobbyPlayers.length < 2) return alert('At least 2 players are needed!');
+      playSfx('win');
 
       const deck = createInitialCourtDeck();
       hideMyCards = true;
       lastSeenLossSignature = null;
+      prevPodStats = {};
 
       const players = lobbyPlayers.map(lp => ({
         id: lp.id,
@@ -2034,6 +2744,7 @@
         lossQueue: [],
         exchangeData: null,
         proofReveal: null,
+        tableFx: null,
         logs: [{
           text: `🎴 Game started! 0 Coins & 2 cards dealt.`,
           type: 'win'
@@ -2089,6 +2800,7 @@
         const winner = alivePlayers[0];
         if (winner) {
           addLog(`🏆 VICTORY! ${winner.name} wins!`, 'win');
+          emitTableFx('VICTORY', { actorId: winner.id, actorName: winner.name });
         }
         syncStateToAll();
         return;
@@ -2114,7 +2826,7 @@
     }
 
     /*************************************************************************
-     * 4. AUTHORITATIVE GAME ENGINE (NO ASSASSIN REFUND ON CAUGHT BLUFF)
+     * 4. AUTHORITATIVE GAME ENGINE (WITH SYNCHRONIZED TABLE FX)
      *************************************************************************/
     function processPlayerCommand(senderId, cmd) {
       const actor = getActivePlayer();
@@ -2140,6 +2852,7 @@
           actor.coins += 1;
           gameState.treasury = Math.max(0, gameState.treasury - 1);
           addLog(`🪙 ${actor.name} takes Income (+1).`);
+          emitTableFx('COINS_GAIN', { actorId: actor.id, actorName: actor.name, amount: 1 });
           advanceToNextTurn();
           return;
         }
@@ -2149,7 +2862,13 @@
           actor.coins -= 7;
           gameState.treasury += 7;
           addLog(`💥 ${actor.name} COUPS ${target.name} (-7)!`, 'challenge');
-          queueQuietCardLoss(target.id, `Couped by ${actor.name}`, 'NEXT_TURN');
+          emitTableFx('COUP', {
+            actorId: actor.id,
+            actorName: actor.name,
+            targetId: target.id,
+            targetName: target.name
+          });
+          queueQuietCardLoss(target.id, `Couped by ${actor.name}`, 'NEXT_TURN', true);
           return;
         }
 
@@ -2192,6 +2911,12 @@
           actor.coins -= 3;
           gameState.treasury += 3;
           addLog(`🔴 ${actor.name} pays 3 & claims ASSASSIN on ${target.name}!`, 'claim');
+          emitTableFx('ASSASSINATE_CLAIM', {
+            actorId: actor.id,
+            actorName: actor.name,
+            targetId: target.id,
+            targetName: target.name
+          });
           gameState.phase = 'AWAITING_ACTION_RESPONSE';
           gameState.pendingAction = {
             type: 'ASSASSINATE',
@@ -2289,20 +3014,33 @@
           };
 
           addLog(`✅ NO BLUFF! ${claimer.name} had [${provenRole}]! ${challenger.name} loses 1 card.`, 'win');
-          queueQuietCardLoss(challenger.id, `Lost bluff call vs ${claimer.name}'s ${provenRole}`, 'RESOLVE_ACTION');
+          emitTableFx('NO_BLUFF', {
+            actorId: claimer.id,
+            actorName: claimer.name,
+            targetId: challenger.id,
+            targetName: challenger.name,
+            reason: provenRole
+          });
+          queueQuietCardLoss(challenger.id, `Lost bluff call vs ${claimer.name}'s ${provenRole}`, 'RESOLVE_ACTION', true);
         } else {
           if (pa.type === 'ASSASSINATE') {
-            // Rule: Person A caught bluffing Assassin does NOT get their 3 coins refunded!
             addLog(`❌ BLUFF CAUGHT! ${claimer.name} had no ${pa.claimedRole} (3 Coins lost) & loses 1 card!`, 'challenge');
           } else {
             addLog(`❌ BLUFF CAUGHT! ${claimer.name} had no ${pa.claimedRole} & loses 1 card!`, 'challenge');
           }
-          queueQuietCardLoss(claimer.id, `Caught bluffing ${pa.claimedRole}`, 'NEXT_TURN');
+          emitTableFx('BLUFF_CAUGHT', {
+            actorId: challenger.id,
+            actorName: challenger.name,
+            targetId: claimer.id,
+            targetName: claimer.name,
+            reason: pa.claimedRole
+          });
+          queueQuietCardLoss(claimer.id, `Caught bluffing ${pa.claimedRole}`, 'NEXT_TURN', true);
         }
         return;
       }
 
-      // 4. DECLARE A BLOCK (No card mentioned for Steal or Assassinate!)
+      // 4. DECLARE A BLOCK
       if (cmd.action === 'DECLARE_BLOCK' && (gameState.phase === 'AWAITING_ACTION_RESPONSE' || gameState.phase === 'AWAITING_BLOCK_ONLY')) {
         const pa = gameState.pendingAction;
         const blocker = getPlayer(cmd.actingPlayerId || senderId);
@@ -2323,6 +3061,11 @@
         gameState.phase = 'AWAITING_BLOCK_RESPONSE';
 
         addLog(`🛡️ ${blocker.name} BLOCKS ${getPlayer(pa.actorId).name}'s ${pa.type}!`, 'block');
+        emitTableFx('BLOCK', {
+          actorId: blocker.id,
+          actorName: blocker.name,
+          reason: `Blocks ${pa.type}`
+        });
         syncStateToAll();
         return;
       }
@@ -2351,15 +3094,28 @@
           };
 
           addLog(`✅ BLOCK VALID! ${blocker.name} showed [${provenRole}]! Block stands & ${challenger.name} loses 1 card.`, 'win');
-          queueQuietCardLoss(challenger.id, `Lost bluff call vs ${blocker.name}'s block`, 'NEXT_TURN');
+          emitTableFx('NO_BLUFF', {
+            actorId: blocker.id,
+            actorName: blocker.name,
+            targetId: challenger.id,
+            targetName: challenger.name,
+            reason: provenRole
+          });
+          queueQuietCardLoss(challenger.id, `Lost bluff call vs ${blocker.name}'s block`, 'NEXT_TURN', true);
         } else {
           addLog(`❌ BLOCK BLUFF CAUGHT! ${blocker.name} loses 1 card & ${pa.type} goes through!`, 'challenge');
-          queueQuietCardLoss(blocker.id, `Caught bluffing block`, 'RESOLVE_ACTION');
+          emitTableFx('BLUFF_CAUGHT', {
+            actorId: challenger.id,
+            actorName: challenger.name,
+            targetId: blocker.id,
+            targetName: blocker.name
+          });
+          queueQuietCardLoss(blocker.id, `Caught bluffing block`, 'RESOLVE_ACTION', true);
         }
         return;
       }
 
-      // 6. QUIETLY RETURN LOST CARD TO BOTTOM OF DECK
+      // 6. QUIETLY RETURN LOST CARD TO BOTTOM OF DECK (WITH LOST CARD ANIMATION FOR ALL PLAYERS)
       if (cmd.action === 'LOSE_CARD' && gameState.phase === 'AWAITING_LOSS') {
         const currentLoss = gameState.lossQueue[0];
         if (!currentLoss) return;
@@ -2379,6 +3135,17 @@
           gameState.treasury += loser.coins;
           loser.coins = 0;
           addLog(`⚰️ ${loser.name} is eliminated!`, 'challenge');
+          emitTableFx('ELIMINATED', {
+            targetId: loser.id,
+            targetName: loser.name,
+            reason: currentLoss.reason
+          });
+        } else {
+          emitTableFx('CARD_LOST', {
+            targetId: loser.id,
+            targetName: loser.name,
+            reason: currentLoss.reason
+          });
         }
 
         gameState.lossQueue.shift();
@@ -2419,7 +3186,7 @@
       }
     }
 
-    function queueQuietCardLoss(playerId, reason, nextCallbackType) {
+    function queueQuietCardLoss(playerId, reason, nextCallbackType, preserveExistingFx = false) {
       const player = getPlayer(playerId);
       if (!player || !player.alive) {
         if (nextCallbackType === 'RESOLVE_ACTION') executeUnblockedAction();
@@ -2441,6 +3208,11 @@
         gameState.treasury += player.coins;
         player.coins = 0;
         addLog(`📥 ${player.name} loses last card (${reason}) & is out!`, 'challenge');
+        emitTableFx('ELIMINATED', {
+          targetId: player.id,
+          targetName: player.name,
+          reason
+        });
 
         if (nextCallbackType === 'RESOLVE_ACTION') executeUnblockedAction();
         else advanceToNextTurn();
@@ -2473,11 +3245,13 @@
         actor.coins += 2;
         gameState.treasury = Math.max(0, gameState.treasury - 2);
         addLog(`💰 ${actor.name} takes Foreign Aid (+2).`);
+        emitTableFx('COINS_GAIN', { actorId: actor.id, actorName: actor.name, amount: 2 });
         advanceToNextTurn();
       } else if (pa.type === 'TAX') {
         actor.coins += 3;
         gameState.treasury = Math.max(0, gameState.treasury - 3);
         addLog(`🟣 ${actor.name} collects Tax (+3).`);
+        emitTableFx('COINS_GAIN', { actorId: actor.id, actorName: actor.name, amount: 3 });
         advanceToNextTurn();
       } else if (pa.type === 'STEAL') {
         if (target && target.alive) {
@@ -2485,12 +3259,25 @@
           target.coins -= stolen;
           actor.coins += stolen;
           addLog(`🔵 ${actor.name} steals ${stolen} Coin(s) from ${target.name}!`);
+          emitTableFx('STEAL', {
+            actorId: actor.id,
+            actorName: actor.name,
+            targetId: target.id,
+            targetName: target.name,
+            amount: stolen
+          });
         }
         advanceToNextTurn();
       } else if (pa.type === 'ASSASSINATE') {
         if (target && target.alive) {
           addLog(`🗡️ ${actor.name}'s Assassination hits ${target.name}!`, 'challenge');
-          queueQuietCardLoss(target.id, `Assassinated by ${actor.name}`, 'NEXT_TURN');
+          emitTableFx('ASSASSINATE_HIT', {
+            actorId: actor.id,
+            actorName: actor.name,
+            targetId: target.id,
+            targetName: target.name
+          });
+          queueQuietCardLoss(target.id, `Assassinated by ${actor.name}`, 'NEXT_TURN', true);
         } else {
           advanceToNextTurn();
         }
@@ -2509,7 +3296,7 @@
     }
 
     /*************************************************************************
-     * 5. UI RENDERING (PRIVACY SHIELD ON LOSS, FULL VERTICAL CARDS, BUTTON SIZES)
+     * 5. UI RENDERING (PRIVACY SHIELD ON LOSS, FULL VERTICAL CARDS, LIVE DELTAS)
      *************************************************************************/
     let pendingMoveWaitingTarget = null;
     let selectedExchangeIndices = [];
@@ -2526,6 +3313,11 @@
       const topBar = document.getElementById('turnTopBar');
       topBar.classList.toggle('my-turn-active', isMyTurn);
 
+      const cmdBox = document.getElementById('commandPanelBox');
+      if (cmdBox) {
+        cmdBox.classList.toggle('my-turn-ready', Boolean(isMyTurn && gameState.phase === 'TURN_DECISION'));
+      }
+
       document.getElementById('turnStatusHeader').textContent =
         gameState.phase === 'GAME_OVER'
           ? '🏆 GAME OVER'
@@ -2535,7 +3327,6 @@
       const mustPickToLose = Boolean(currentLoss && currentLoss.playerId === me.id);
 
       // PRIVACY SHIELD: Never auto-pop cards open when Couped or losing a card!
-      // Instead, lock hideMyCards = true when a new loss event arrives so the player must tap first to peek.
       if (mustPickToLose) {
         const lossSig = currentLoss.lossId || `${currentLoss.playerId}_${currentLoss.reason}_${gameState.lossQueue.length}`;
         if (lastSeenLossSignature !== lossSig) {
@@ -2577,6 +3368,11 @@
       renderCommandDeck(me, activePlayer);
       renderLogs();
 
+      // Play synchronized table FX for all players after DOM pods are rendered
+      requestAnimationFrame(() => {
+        triggerSynchronizedTableFx();
+      });
+
       if (gameState.phase === 'AWAITING_EXCHANGE' && gameState.exchangeData && gameState.exchangeData.playerId === me.id) {
         openAmbassadorModal();
       } else {
@@ -2595,8 +3391,14 @@
         const isMe = p.id === me.id;
         const activeCards = p.cards.filter(c => !c.lost).length;
 
+        const prev = prevPodStats[p.id];
+        const coinDiff = prev ? (p.coins - prev.coins) : 0;
+        const cardDiff = prev ? (activeCards - prev.cards) : 0;
+        prevPodStats[p.id] = { coins: p.coins, cards: activeCards };
+
         const el = document.createElement('div');
-        el.className = `mini-pod ${isTurn ? 'active-turn' : ''} ${!p.alive ? 'eliminated' : ''}`;
+        el.className = `mini-pod ${isTurn ? 'active-turn' : ''} ${!p.alive ? 'eliminated' : ''} ${coinDiff > 0 ? 'pod-gain-flash' : ''}`;
+        el.setAttribute('data-player-id', p.id);
 
         el.innerHTML = `
           <div style="display:flex; align-items:center; justify-content:space-between; gap:0.25rem;">
@@ -2607,12 +3409,28 @@
             </div>
           </div>
           <div class="mini-pod-stats">
-            <span><span class="pod-icon">🎴</span><strong class="pod-num">${activeCards}</strong></span>
+            <span><span class="pod-icon">🎴</span><strong class="pod-num ${cardDiff !== 0 ? 'stat-pop' : ''}">${activeCards}</strong></span>
             <span>•</span>
-            <span><span class="pod-icon">🪙</span><strong class="pod-coin-num">${p.coins}</strong></span>
+            <span><span class="pod-icon">🪙</span><strong class="pod-coin-num ${coinDiff !== 0 ? 'stat-pop' : ''}">${p.coins}</strong></span>
           </div>
         `;
         grid.appendChild(el);
+
+        // Spawn floating delta badges over the player's pod when coins or cards change
+        if (coinDiff !== 0 || cardDiff !== 0) {
+          requestAnimationFrame(() => {
+            if (coinDiff > 0) {
+              spawnPodFloater(p.id, `+${coinDiff} 🪙`, 'rgba(16, 185, 129, 0.92)', '#fff');
+            } else if (coinDiff < 0) {
+              spawnPodFloater(p.id, `${coinDiff} 🪙`, 'rgba(225, 29, 72, 0.92)', '#fff');
+            }
+            if (cardDiff < 0) {
+              setTimeout(() => {
+                spawnPodFloater(p.id, `${cardDiff} 🎴 LOST`, 'rgba(190, 18, 60, 0.96)', '#fda4af');
+              }, coinDiff !== 0 ? 140 : 0);
+            }
+          });
+        }
       });
     }
 
@@ -2809,6 +3627,7 @@
             revealBtn.className = 'btn btn-gold response-btn';
             revealBtn.textContent = '👀 See My Cards to Dump One';
             revealBtn.onclick = () => {
+              playSfx('tap');
               hideMyCards = false;
               renderGameScreen();
             };
@@ -2942,6 +3761,7 @@
         return;
       }
 
+      playSfx('tap');
       pendingMoveWaitingTarget = moveType;
       const list = document.getElementById('targetPlayersList');
       list.innerHTML = '';
@@ -2998,6 +3818,7 @@
         `;
 
         cardDiv.onclick = () => {
+          playSfx('tap');
           const pos = selectedExchangeIndices.indexOf(idx);
           if (pos !== -1) {
             selectedExchangeIndices.splice(pos, 1);
@@ -3033,6 +3854,7 @@
     }
 
     function openModal(modalId) {
+      playSfx('tap');
       const modal = document.getElementById(modalId);
       if (modal) modal.classList.add('open');
     }
@@ -3060,6 +3882,7 @@
         currentRoomCode = '';
         gameState.started = false;
         lobbyPlayers = [];
+        prevPodStats = {};
         document.body.classList.add('lobby-mode');
         document.getElementById('gameScreen').style.display = 'none';
         document.getElementById('lobbyScreen').style.display = 'block';
@@ -3084,6 +3907,7 @@
     function copyTableCode() {
       const code = document.getElementById('roomCodeText').textContent;
       if (!code || code === '------') return;
+      playSfx('tap');
       navigator.clipboard.writeText(code).then(() => {
         alert(`Room Code ${code} copied!`);
       });
@@ -3092,6 +3916,7 @@
     function copyTableLink() {
       const code = document.getElementById('roomCodeText').textContent;
       if (!code || code === '------') return;
+      playSfx('tap');
       const url = `${window.location.origin}${window.location.pathname}?join=${code}`;
       navigator.clipboard.writeText(url).then(() => {
         alert(`Link copied!\n${url}`);
@@ -3116,11 +3941,7 @@
     });
 
     window.addEventListener('DOMContentLoaded', () => {
-      // Set box image dynamically so static bundlers don't choke if images/ folder is external
-      const boxImg = document.getElementById('lobbyBoxImg');
-      if (boxImg) {
-        boxImg.src = 'images/box.jpg';
-      }
+      updateSoundToggleBtn();
 
       // 1. Restore remembered username from Cookies / LocalStorage
       const rememberedName = getPersistentValue('coup_username');
@@ -3159,6 +3980,9 @@
           lobbyPlayers = Array.isArray(snapshot.lobbyPlayers) ? snapshot.lobbyPlayers : [];
           if (snapshot.gameState && snapshot.gameState.started) {
             gameState = snapshot.gameState;
+            if (gameState.tableFx && gameState.tableFx.id) {
+              lastPlayedFxId = gameState.tableFx.id;
+            }
             hideMyCards = true;
             showActiveGameUI();
             renderGameScreen();
@@ -3173,6 +3997,9 @@
           }
           if (snapshot.gameState && snapshot.gameState.started) {
             gameState = snapshot.gameState;
+            if (gameState.tableFx && gameState.tableFx.id) {
+              lastPlayedFxId = gameState.tableFx.id;
+            }
             hideMyCards = true;
             showActiveGameUI();
             renderGameScreen();
