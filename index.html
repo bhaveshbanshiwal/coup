@@ -700,6 +700,8 @@
       text-align: center;
       line-height: 1.2;
       align-self: center;
+      justify-self: center;
+      margin: 0 auto;
       transition: transform 0.16s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
 
@@ -753,10 +755,10 @@
       animation: urgentPulse 1.1s ease-in-out infinite alternate;
     }
 
-    /* 3-COLUMN TABLETOP ROW: MY CARDS (LEFT) + REVEAL CARDS BUTTON (CENTER) + SCATTERED COINS BOX (RIGHT) */
+    /* 3-COLUMN TABLETOP ROW: MY CARDS FLUSH LEFT + REVEAL CARDS BUTTON IN SPACE BETWEEN + SCATTERED COINS BOX FLUSH RIGHT */
     .my-tabletop-row {
       display: grid;
-      grid-template-columns: minmax(0, 1.25fr) auto minmax(120px, 1.05fr);
+      grid-template-columns: auto 1fr minmax(140px, 44%);
       gap: 0.55rem;
       align-items: stretch;
       width: 100%;
@@ -766,11 +768,12 @@
 
     .cards-row {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 148px));
-      justify-content: center;
+      grid-template-columns: repeat(2, clamp(96px, 16vw, 146px));
+      justify-content: start;
+      justify-self: start;
       gap: 0.55rem;
       flex-shrink: 0;
-      width: 100%;
+      width: fit-content;
       animation: slideDownFade 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -881,7 +884,7 @@
       flex-direction: column;
       justify-content: flex-end;
       background: #0d111a;
-      margin: 0 auto;
+      margin: 0;
       box-shadow: 0 10px 26px rgba(0, 0, 0, 0.72);
       transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease;
       will-change: transform;
@@ -950,7 +953,7 @@
 
     @media (max-width: 680px) {
       .my-tabletop-row {
-        grid-template-columns: minmax(0, 1.24fr) auto minmax(98px, 1fr);
+        grid-template-columns: auto 1fr minmax(104px, 38%);
         gap: 0.36rem;
       }
 
@@ -969,6 +972,7 @@
       }
 
       .cards-row {
+        grid-template-columns: repeat(2, clamp(74px, 21.5vw, 108px));
         gap: 0.35rem;
       }
 
