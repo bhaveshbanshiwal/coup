@@ -824,11 +824,11 @@
       margin-bottom: 0.62rem;
     }
 
-    /* 2x2 Spacious Modern Card-Game Grid for Character Claims */
+    /* 1-Line 4-Column Modern Card-Game Grid for Character Claims (Landscape & Portrait) */
     .char-actions-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.55rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.48rem;
     }
 
     /* Modern Card-Game 3D Beveled Action Button */
@@ -836,7 +836,7 @@
       background: linear-gradient(180deg, #25304a 0%, #141a2b 100%);
       border: 1.5px solid rgba(255, 255, 255, 0.24);
       border-radius: 12px;
-      padding: 0.58rem 0.48rem;
+      padding: 0.54rem 0.45rem;
       text-align: center;
       cursor: pointer;
       color: var(--text-main);
@@ -850,23 +850,23 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.26rem;
-      min-height: 74px;
+      gap: 0.24rem;
+      min-height: 70px;
       position: relative;
       overflow: hidden;
       will-change: transform;
       user-select: none;
     }
 
-    /* Character Action Card-Tile Layout (Portrait Left + Proportional Typography Right) */
+    /* Character Action Card-Tile Layout (4 in 1 Line) */
     .action-btn.char-card-btn {
       flex-direction: row;
       align-items: center;
       justify-content: flex-start;
       text-align: left;
-      padding: 0.55rem 0.68rem;
-      gap: 0.65rem;
-      min-height: 80px;
+      padding: 0.46rem 0.48rem;
+      gap: 0.44rem;
+      min-height: 74px;
     }
 
     /* Bespoke Suiting Card-Game Themes for Each Action & Character Card */
@@ -957,9 +957,9 @@
     }
 
     .btn-role-avatar {
-      width: 44px;
-      height: 58px;
-      border-radius: 7px;
+      width: 36px;
+      height: 48px;
+      border-radius: 6px;
       object-fit: cover;
       border: 1.5px solid rgba(253, 224, 71, 0.78);
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.65);
@@ -971,7 +971,7 @@
       flex-direction: column;
       align-items: flex-start;
       justify-content: center;
-      gap: 0.24rem;
+      gap: 0.2rem;
       min-width: 0;
       flex: 1;
     }
@@ -980,8 +980,8 @@
     .action-btn-title {
       font-family: 'Cinzel', serif;
       font-weight: 900;
-      font-size: clamp(0.9rem, 2.5vw, 1.08rem);
-      letter-spacing: 0.03em;
+      font-size: clamp(0.88rem, 2.3vw, 1.05rem);
+      letter-spacing: 0.02em;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -991,11 +991,16 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
     }
 
+    .action-btn.char-card-btn .action-btn-title {
+      font-size: clamp(0.74rem, 1.45vw, 0.94rem);
+      letter-spacing: 0.01em;
+    }
+
     .action-btn-desc {
-      font-size: clamp(0.78rem, 2.1vw, 0.9rem);
+      font-size: clamp(0.76rem, 2vw, 0.88rem);
       color: #fef08a;
       font-weight: 800;
-      padding: 0.14rem 0.48rem;
+      padding: 0.13rem 0.42rem;
       border-radius: 6px;
       background: rgba(0, 0, 0, 0.42);
       border: 1px solid rgba(255, 255, 255, 0.16);
@@ -1006,12 +1011,75 @@
       line-height: 1.2;
     }
 
+    .action-btn.char-card-btn .action-btn-desc {
+      font-size: clamp(0.68rem, 1.25vw, 0.82rem);
+      padding: 0.1rem 0.34rem;
+    }
+
+    /* Portrait & Compact View: Keep all 4 Character Actions in 1 Line as Vertical Card Tiles */
+    @media (max-width: 680px) {
+      .general-actions-grid {
+        gap: 0.36rem;
+      }
+
+      .action-btn {
+        padding: 0.44rem 0.24rem;
+        min-height: 66px;
+      }
+
+      .action-btn-title {
+        font-size: clamp(0.7rem, 2.9vw, 0.9rem);
+        letter-spacing: 0.01em;
+      }
+
+      .action-btn-desc {
+        font-size: clamp(0.62rem, 2.4vw, 0.76rem);
+        padding: 0.1rem 0.28rem;
+      }
+
+      .char-actions-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.34rem;
+      }
+
+      .action-btn.char-card-btn {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0.38rem 0.18rem;
+        gap: 0.2rem;
+        min-height: 86px;
+      }
+
+      .char-card-btn-body {
+        align-items: center;
+        width: 100%;
+        gap: 0.16rem;
+      }
+
+      .btn-role-avatar {
+        width: 32px;
+        height: 42px;
+      }
+
+      .action-btn.char-card-btn .action-btn-title {
+        font-size: clamp(0.62rem, 2.4vw, 0.78rem);
+        letter-spacing: 0;
+      }
+
+      .action-btn.char-card-btn .action-btn-desc {
+        font-size: clamp(0.58rem, 2.2vw, 0.72rem);
+        padding: 0.08rem 0.24rem;
+      }
+    }
+
     .bluff-pill {
       position: absolute;
-      top: 6px;
-      right: 6px;
-      font-size: 0.64rem;
-      padding: 0.1rem 0.36rem;
+      top: 4px;
+      right: 4px;
+      font-size: 0.56rem;
+      padding: 0.08rem 0.28rem;
       border-radius: 4px;
       font-weight: 800;
       text-transform: uppercase;
