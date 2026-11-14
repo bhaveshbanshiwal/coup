@@ -1543,6 +1543,327 @@
       80% { transform: translate3d(4px, 2px, 0); }
     }
 
+    /* ================= NEW VISUAL ACTION ANIMATIONS (TREASURY, STEAL, BLOCK HAND, EXCHANGE) ================= */
+    .fx-action-stage {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      width: min(88vw, 340px);
+      height: min(58vh, 340px);
+      transform: translate3d(-50%, -50%, 0);
+      background: radial-gradient(circle at 50% 35%, rgba(24, 32, 52, 0.97) 0%, rgba(8, 11, 18, 0.96) 100%);
+      border: 2px solid rgba(251, 191, 36, 0.8);
+      border-radius: 14px;
+      box-shadow: 0 22px 60px rgba(0, 0, 0, 0.92), 0 0 32px rgba(245, 158, 11, 0.35);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.78rem 0.9rem;
+      z-index: 168;
+      will-change: transform, opacity;
+      animation: actionStageInOut 1.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* 1. Treasury Coins Dispenser (Income +1, Foreign Aid +2, Duke Tax +3) */
+    .fx-treasury-arena {
+      position: relative;
+      width: 100%;
+      height: 185px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.25rem 0;
+    }
+
+    .fx-vault-box,
+    .fx-receiver-box {
+      padding: 0.32rem 0.8rem;
+      border-radius: 8px;
+      font-family: 'Cinzel', serif;
+      font-weight: 900;
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      z-index: 4;
+    }
+
+    .fx-vault-box {
+      background: linear-gradient(180deg, #451a03 0%, #1c0a00 100%);
+      border: 1.5px solid #fbbf24;
+      color: #fde047;
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.45);
+    }
+
+    .fx-receiver-box {
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      border: 1.5px solid #38bdf8;
+      color: #f8fafc;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    }
+
+    .fx-treasury-coin-stream {
+      position: absolute;
+      left: 50%;
+      top: 28px;
+      width: 44px;
+      height: 44px;
+      margin-left: -22px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 32% 30%, #fef08a 0%, #f59e0b 58%, #b45309 100%);
+      border: 2px solid #fffbeb;
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.9), 0 4px 10px rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      z-index: 6;
+      opacity: 0;
+      will-change: transform, opacity;
+      animation: treasuryCoinDrop 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* 2. Captain Steal Hand Snatch Arena */
+    .fx-steal-arena {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 0.4rem;
+    }
+
+    .fx-steal-Endpoint {
+      width: 92px;
+      padding: 0.45rem 0.35rem;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1.5px solid rgba(148, 163, 184, 0.45);
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      z-index: 3;
+    }
+
+    .fx-steal-hand {
+      position: absolute;
+      left: 50%;
+      top: 44%;
+      font-size: 2.65rem;
+      transform: translate3d(-50%, -50%, 0);
+      z-index: 8;
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.85));
+      will-change: transform;
+      animation: captainHandSnatch 1.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .fx-steal-coin-bundle {
+      position: absolute;
+      left: 24%;
+      top: 52%;
+      display: flex;
+      gap: 0.2rem;
+      transform: translate3d(-50%, -50%, 0);
+      z-index: 7;
+      will-change: transform, opacity;
+      animation: stolenCoinsDrag 1.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* 3. Blocking Hand Slam Arena (Blocks Foreign Aid, Captain Steal, or Assassin) */
+    .fx-block-arena {
+      position: relative;
+      width: 100%;
+      height: 188px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .fx-incoming-attempt {
+      position: absolute;
+      left: 16%;
+      top: 50%;
+      font-size: 1.9rem;
+      transform: translate3d(0, -50%, 0);
+      will-change: transform, opacity;
+      animation: incomingAttemptRepelled 1.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .fx-blocking-hand-palm {
+      position: relative;
+      width: 104px;
+      height: 104px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.38) 0%, rgba(30, 58, 138, 0.88) 75%);
+      border: 3px solid #93c5fd;
+      box-shadow: 0 0 28px rgba(59, 130, 246, 0.9), inset 0 0 18px rgba(255, 255, 255, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.3rem;
+      z-index: 10;
+      will-change: transform, opacity;
+      animation: blockingHandSlam 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .fx-block-shockwave {
+      position: absolute;
+      width: 104px;
+      height: 104px;
+      border-radius: 50%;
+      border: 3px solid #fde047;
+      opacity: 0;
+      z-index: 5;
+      will-change: transform, opacity;
+      animation: blockWavePulse 0.95s 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* 4. Ambassador Exchange Arena (1 or 2 Cards -> Deck Bottom, 2 or 1 Cards <- Deck Top) */
+    .fx-exchange-arena {
+      position: relative;
+      width: 100%;
+      height: 195px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .fx-court-deck-center {
+      position: relative;
+      width: 82px;
+      height: 114px;
+      border-radius: 8px;
+      border: 2px solid #fbbf24;
+      background: #0d111a;
+      box-shadow: 0 6px 0 #78350f, 0 12px 24px rgba(0, 0, 0, 0.85);
+      overflow: hidden;
+      z-index: 6;
+    }
+
+    .fx-court-deck-center img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .fx-deck-label-tag {
+      position: absolute;
+      bottom: 4px;
+      left: 4px;
+      right: 4px;
+      background: rgba(7, 9, 14, 0.9);
+      color: #fde047;
+      font-family: 'Cinzel', serif;
+      font-size: 0.56rem;
+      font-weight: 900;
+      text-align: center;
+      padding: 0.12rem 0.2rem;
+      border-radius: 4px;
+      border: 1px solid rgba(251, 191, 36, 0.45);
+    }
+
+    .fx-swap-card {
+      position: absolute;
+      width: 68px;
+      height: 95px;
+      border-radius: 7px;
+      border: 2px solid #34d399;
+      background: #0d111a;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.8);
+      overflow: hidden;
+      will-change: transform, opacity;
+    }
+
+    .fx-swap-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Old cards going into the BOTTOM of the Court Deck (behind deck z-index) */
+    .fx-swap-card.card-to-bottom {
+      z-index: 4;
+      border-color: #f59e0b;
+      animation: cardSlideIntoDeckBottom 0.88s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* New cards drawn from the TOP of the Court Deck (in front of deck z-index) */
+    .fx-swap-card.card-from-top {
+      z-index: 9;
+      border-color: #34d399;
+      opacity: 0;
+      animation: cardDrawFromDeckTop 0.92s 0.72s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes actionStageInOut {
+      0% { opacity: 0; transform: translate3d(-50%, -46%, 0) scale(0.8); }
+      14% { opacity: 1; transform: translate3d(-50%, -50%, 0) scale(1.02); }
+      22% { opacity: 1; transform: translate3d(-50%, -50%, 0) scale(1); }
+      84% { opacity: 1; transform: translate3d(-50%, -50%, 0) scale(1); }
+      100% { opacity: 0; transform: translate3d(-50%, -54%, 0) scale(0.9); }
+    }
+
+    @keyframes treasuryCoinDrop {
+      0% { opacity: 0; transform: translate3d(var(--coin-x, 0px), -8px, 0) scale(0.4) rotate(-30deg); }
+      25% { opacity: 1; transform: translate3d(var(--coin-x, 0px), 28px, 0) scale(1.12) rotate(0deg); }
+      75% { opacity: 1; transform: translate3d(0px, 108px, 0) scale(1) rotate(360deg); }
+      100% { opacity: 0; transform: translate3d(0px, 126px, 0) scale(0.65) rotate(360deg); }
+    }
+
+    @keyframes captainHandSnatch {
+      0% { opacity: 0; transform: translate3d(68px, -50%, 0) scale(0.75) rotate(15deg); }
+      32% { opacity: 1; transform: translate3d(-66px, -50%, 0) scale(1.12) rotate(-18deg); }
+      52% { opacity: 1; transform: translate3d(-62px, -50%, 0) scale(0.96) rotate(-8deg); }
+      88% { opacity: 1; transform: translate3d(62px, -50%, 0) scale(1.08) rotate(12deg); }
+      100% { opacity: 0; transform: translate3d(78px, -50%, 0) scale(0.85); }
+    }
+
+    @keyframes stolenCoinsDrag {
+      0%, 32% { opacity: 1; transform: translate3d(0px, -50%, 0) scale(1); }
+      45% { opacity: 1; transform: translate3d(12px, -56%, 0) scale(1.16); }
+      88% { opacity: 1; transform: translate3d(145px, -50%, 0) scale(1.05); }
+      100% { opacity: 0; transform: translate3d(160px, -50%, 0) scale(0.6); }
+    }
+
+    @keyframes blockingHandSlam {
+      0% { opacity: 0; transform: scale(2.2) translateY(-28px); }
+      26% { opacity: 1; transform: scale(0.92) translateY(0); }
+      38% { opacity: 1; transform: scale(1.08); }
+      52% { opacity: 1; transform: scale(1); }
+      86% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.85); }
+    }
+
+    @keyframes blockWavePulse {
+      0% { opacity: 0.95; transform: scale(0.95); }
+      100% { opacity: 0; transform: scale(2.15); }
+    }
+
+    @keyframes incomingAttemptRepelled {
+      0% { opacity: 0; transform: translate3d(-24px, -50%, 0) scale(0.8); }
+      28% { opacity: 1; transform: translate3d(38px, -50%, 0) scale(1.08); }
+      46% { opacity: 1; transform: translate3d(-42px, -25%, 0) rotate(-35deg) scale(0.9); }
+      100% { opacity: 0; transform: translate3d(-75px, 20%, 0) rotate(-65deg) scale(0.5); }
+    }
+
+    @keyframes cardSlideIntoDeckBottom {
+      0% { opacity: 1; transform: translate3d(var(--card-offset-x, 0px), 68px, 0) scale(1) rotate(var(--card-rot, 0deg)); }
+      55% { opacity: 1; transform: translate3d(calc(var(--card-offset-x, 0px) * 0.4), 24px, 0) scale(0.92) rotate(0deg); }
+      100% { opacity: 0; transform: translate3d(0px, 8px, 0) scale(0.75); }
+    }
+
+    @keyframes cardDrawFromDeckTop {
+      0% { opacity: 0; transform: translate3d(0px, -14px, 0) scale(0.75); }
+      25% { opacity: 1; transform: translate3d(calc(var(--card-offset-x, 0px) * 0.5), -26px, 0) scale(1.04); }
+      80% { opacity: 1; transform: translate3d(var(--card-offset-x, 0px), 58px, 0) scale(1) rotate(var(--card-rot, 0deg)); }
+      100% { opacity: 0; transform: translate3d(var(--card-offset-x, 0px), 72px, 0) scale(0.92) rotate(var(--card-rot, 0deg)); }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -2305,13 +2626,227 @@
       }, 2280);
     }
 
-    function triggerSynchronizedTableFx() {
-      const fx = gameState.tableFx;
-      if (!fx || !fx.id || fx.id === lastPlayedFxId) return;
-      lastPlayedFxId = fx.id;
+    /*
+     * 1. TREASURY COIN DISPENSER ANIMATION (Duke Tax +3, Foreign Aid +2, Income +1)
+     */
+    function spawnTreasuryActionAnimation(fx) {
+      const layer = document.getElementById('tableFxLayer');
+      if (!layer) return;
 
+      playSfx('coin');
+      const count = Math.max(1, Math.min(3, fx.amount || 1));
+
+      if (fx.actorId) {
+        spawnFlyingCoins(getElementCenter('treasuryBadgeBox'), getPodCenter(fx.actorId), count);
+      }
+
+      const isDuke = fx.type === 'DUKE_TAX';
+      const isAid = fx.type === 'FOREIGN_AID_GAIN';
+      const titleText = isDuke
+        ? `🟣 DUKE TAX • +3 COINS`
+        : isAid
+        ? `💰 FOREIGN AID • +2 COINS`
+        : `🪙 INCOME • +1 COIN`;
+
+      const borderCol = isDuke ? '#c084fc' : (isAid ? '#fbbf24' : '#34d399');
+
+      let coinsHtml = '';
+      for (let i = 0; i < count; i++) {
+        const offsetX = (i - (count - 1) / 2) * 44;
+        const delayMs = i * 110;
+        coinsHtml += `<div class="fx-treasury-coin-stream" style="--coin-x:${offsetX}px; animation-delay:${delayMs}ms;">🪙</div>`;
+      }
+
+      const stage = document.createElement('div');
+      stage.className = 'fx-action-stage';
+      stage.style.borderColor = borderCol;
+      stage.innerHTML = `
+        <div class="fx-stage-header">
+          <div class="fx-stage-title" style="color:${borderCol};">${escapeHtml(titleText)}</div>
+          <div class="fx-stage-sub" style="color:#fde68a;">${escapeHtml(fx.actorName)} takes ${count} Coin${count > 1 ? 's' : ''} from Treasury</div>
+        </div>
+        <div class="fx-treasury-arena">
+          <div class="fx-vault-box">🏛️ ROYAL TREASURY</div>
+          ${coinsHtml}
+          <div class="fx-receiver-box" style="border-color:${borderCol};">👑 ${escapeHtml(fx.actorName)} (+${count} 🪙)</div>
+        </div>
+        <div class="fx-stage-footer">TREASURY VAULT TRANSFER</div>
+      `;
+
+      layer.appendChild(stage);
+      setTimeout(() => stage.remove(), 1780);
+    }
+
+    /*
+     * 2. CAPTAIN STEAL HAND SNATCH ANIMATION (When Steal is Allowed)
+     */
+    function spawnCaptainStealAnimation(fx) {
+      const layer = document.getElementById('tableFxLayer');
+      if (!layer) return;
+
+      playSfx('coin');
+      const count = Math.max(1, Math.min(2, fx.amount || 2));
+
+      if (fx.targetId && fx.actorId && fx.amount > 0) {
+        spawnFlyingCoins(getPodCenter(fx.targetId), getPodCenter(fx.actorId), count);
+      }
+
+      let coinsBundle = '';
+      for (let i = 0; i < count; i++) {
+        coinsBundle += `<div class="fx-orbit-coin" style="position:static; margin:0; width:34px; height:34px;">🪙</div>`;
+      }
+
+      const stage = document.createElement('div');
+      stage.className = 'fx-action-stage';
+      stage.style.borderColor = '#60a5fa';
+      stage.innerHTML = `
+        <div class="fx-stage-header">
+          <div class="fx-stage-title" style="color:#93c5fd;">🔵 CAPTAIN STEAL!</div>
+          <div class="fx-stage-sub" style="color:#fde047;">${escapeHtml(fx.actorName)} snatches ${fx.amount} Coin${fx.amount === 1 ? '' : 's'} from ${escapeHtml(fx.targetName)}!</div>
+        </div>
+        <div class="fx-steal-arena">
+          <div class="fx-steal-Endpoint" style="border-color:#f43f5e;">
+            <div style="font-size:1.1rem;">👛</div>
+            <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(fx.targetName)}</div>
+            <div style="color:#fda4af; font-size:0.7rem;">-${fx.amount} 🪙</div>
+          </div>
+          <div class="fx-steal-coin-bundle">${coinsBundle}</div>
+          <div class="fx-steal-hand" id="captainGrabHandEl">🫳</div>
+          <div class="fx-steal-Endpoint" style="border-color:#60a5fa;">
+            <div style="font-size:1.1rem;">⚓</div>
+            <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(fx.actorName)}</div>
+            <div style="color:#fde047; font-size:0.7rem;">+${fx.amount} 🪙</div>
+          </div>
+        </div>
+        <div class="fx-stage-footer">CAPTAIN RAID • COINS SEIZED</div>
+      `;
+
+      layer.appendChild(stage);
+
+      setTimeout(() => {
+        const handEl = stage.querySelector('#captainGrabHandEl');
+        if (handEl) handEl.textContent = '✊';
+      }, 460);
+
+      setTimeout(() => stage.remove(), 1780);
+    }
+
+    /*
+     * 3. BLOCKING HAND SLAM ANIMATION (When Foreign Aid, Captain Steal, or Assassin is Blocked)
+     */
+    function spawnBlockingHandAnimation(fx) {
+      const layer = document.getElementById('tableFxLayer');
+      if (!layer) return;
+
+      playSfx('block');
+      spawnScreenFlash('radial-gradient(circle, rgba(59,130,246,0.38) 0%, transparent 75%)');
+
+      const actionBlocked = fx.reason || 'Action';
+      const isAidBlock = actionBlocked.includes('FOREIGN_AID');
+      const isStealBlock = actionBlocked.includes('STEAL');
+      const incomingIcon = isAidBlock ? '🪙🪙' : (isStealBlock ? '🫳🪙' : '🗡️');
+      const subDetail = isAidBlock
+        ? `🟣 ${fx.actorName} blocks Foreign Aid from Treasury!`
+        : isStealBlock
+        ? `🛡️ ${fx.actorName}'s Blocking Hand stops Captain's Steal!`
+        : `🛡️ ${fx.actorName} blocks Assassination!`;
+
+      const stage = document.createElement('div');
+      stage.className = 'fx-action-stage';
+      stage.style.borderColor = '#60a5fa';
+      stage.innerHTML = `
+        <div class="fx-stage-header">
+          <div class="fx-stage-title" style="color:#93c5fd;">✋ BLOCKED BY ${escapeHtml(fx.actorName)}!</div>
+          <div class="fx-stage-sub" style="color:#e0f2fe;">${escapeHtml(subDetail)}</div>
+        </div>
+        <div class="fx-block-arena">
+          <div class="fx-incoming-attempt">${incomingIcon}</div>
+          <div class="fx-block-shockwave"></div>
+          <div class="fx-blocking-hand-palm">✋</div>
+        </div>
+        <div class="fx-stage-footer">COUNTERACTION SHIELD • ACTION STOPPED</div>
+      `;
+
+      layer.appendChild(stage);
+      setTimeout(() => stage.remove(), 1780);
+    }
+
+    /*
+     * 4. AMBASSADOR EXCHANGE ANIMATION (1 or 2 Cards -> Deck Bottom, New Cards <- Deck Top)
+     */
+    function spawnExchangeSwapAnimation(fx) {
+      const layer = document.getElementById('tableFxLayer');
+      if (!layer) return;
+
+      playSfx('win');
+      const cardCount = Math.max(1, Math.min(2, fx.amount || 2));
+
+      let outCardsHtml = '';
+      let inCardsHtml = '';
+      for (let i = 0; i < cardCount; i++) {
+        const offsetX = cardCount === 1 ? 0 : (i === 0 ? -36 : 36);
+        const rot = cardCount === 1 ? 0 : (i === 0 ? -8 : 8);
+        outCardsHtml += `
+          <div class="fx-swap-card card-to-bottom" style="--card-offset-x:${offsetX}px; --card-rot:${rot}deg;">
+            <img src="${getCardImageSrc('Hidden')}" alt="Card Back" onerror="handleImageFallback(this, 'Hidden')" />
+          </div>
+        `;
+        inCardsHtml += `
+          <div class="fx-swap-card card-from-top" style="--card-offset-x:${offsetX}px; --card-rot:${rot}deg;">
+            <img src="${getCardImageSrc('Hidden')}" alt="Card Back" onerror="handleImageFallback(this, 'Hidden')" />
+          </div>
+        `;
+      }
+
+      const stage = document.createElement('div');
+      stage.className = 'fx-action-stage';
+      stage.style.borderColor = '#34d399';
+      stage.innerHTML = `
+        <div class="fx-stage-header">
+          <div class="fx-stage-title" style="color:#6ee7b7;">🟢 AMBASSADOR EXCHANGE</div>
+          <div class="fx-stage-sub" style="color:#d1fae5;" id="exchangePhaseText">📥 ${escapeHtml(fx.actorName)} puts ${cardCount} card${cardCount > 1 ? 's' : ''} into Deck Bottom...</div>
+        </div>
+        <div class="fx-exchange-arena">
+          ${outCardsHtml}
+          <div class="fx-court-deck-center">
+            <img src="${getCardImageSrc('Hidden')}" alt="Court Deck" onerror="handleImageFallback(this, 'Hidden')" />
+            <div class="fx-deck-label-tag">COURT DECK</div>
+          </div>
+          ${inCardsHtml}
+        </div>
+        <div class="fx-stage-footer">${cardCount} TO DECK BOTTOM • ${cardCount} NEW FROM DECK TOP</div>
+      `;
+
+      layer.appendChild(stage);
+
+      setTimeout(() => {
+        const subEl = stage.querySelector('#exchangePhaseText');
+        if (subEl) {
+          subEl.textContent = `📤 ${fx.actorName} draws ${cardCount} new card${cardCount > 1 ? 's' : ''} from Deck Top!`;
+        }
+        const deckBadge = getElementCenter('courtDeckBadgeBox').el;
+        if (deckBadge) {
+          deckBadge.classList.remove('stat-pop');
+          void deckBadge.offsetWidth;
+          deckBadge.classList.add('stat-pop');
+        }
+      }, 740);
+
+      setTimeout(() => stage.remove(), 1820);
+    }
+
+    function playSingleFxEvent(fx) {
+      if (!fx) return;
       if (fx.type === 'COUP_SLICE' || fx.type === 'ASSASSINATE_SLICE' || fx.type === 'CHALLENGE_SLICE') {
         spawnCenterpieceCoinSliceAnimation(fx.type, fx);
+      } else if (fx.type === 'DUKE_TAX' || fx.type === 'FOREIGN_AID_GAIN' || fx.type === 'INCOME_GAIN' || fx.type === 'COINS_GAIN') {
+        spawnTreasuryActionAnimation(fx);
+      } else if (fx.type === 'CAPTAIN_STEAL' || fx.type === 'STEAL') {
+        spawnCaptainStealAnimation(fx);
+      } else if (fx.type === 'BLOCK' || fx.type === 'BLOCK_HAND') {
+        spawnBlockingHandAnimation(fx);
+      } else if (fx.type === 'EXCHANGE_SWAP') {
+        spawnExchangeSwapAnimation(fx);
       } else if (fx.type === 'ASSASSINATE_CLAIM') {
         playSfx('slash');
         spawnKineticBanner(
@@ -2327,14 +2862,6 @@
           `Waiting for ${fx.targetName} to choose 1 card to dump...`,
           'linear-gradient(135deg, #7f1d1d 0%, #be123c 100%)',
           '#fda4af'
-        );
-      } else if (fx.type === 'BLOCK') {
-        playSfx('block');
-        spawnKineticBanner(
-          `🛡️ ${fx.actorName} BLOCKS!`,
-          fx.reason || 'Counteraction declared',
-          'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
-          '#93c5fd'
         );
       } else if (fx.type === 'BLUFF_CAUGHT') {
         playSfx('coup');
@@ -2353,16 +2880,6 @@
           'linear-gradient(135deg, #065f46 0%, #059669 100%)',
           '#6ee7b7'
         );
-      } else if (fx.type === 'STEAL') {
-        playSfx('coin');
-        if (fx.targetId && fx.actorId && fx.amount > 0) {
-          spawnFlyingCoins(getPodCenter(fx.targetId), getPodCenter(fx.actorId), fx.amount);
-        }
-      } else if (fx.type === 'COINS_GAIN') {
-        playSfx('coin');
-        if (fx.actorId && fx.amount > 0) {
-          spawnFlyingCoins(getElementCenter('treasuryBadgeBox'), getPodCenter(fx.actorId), fx.amount);
-        }
       } else if (fx.type === 'VICTORY') {
         playSfx('win');
         spawnKineticBanner(
@@ -2371,6 +2888,20 @@
           'linear-gradient(135deg, #b45309 0%, #f59e0b 100%)',
           '#fde047'
         );
+      }
+    }
+
+    function triggerSynchronizedTableFx() {
+      const fx = gameState.tableFx;
+      if (!fx || !fx.id || fx.id === lastPlayedFxId) return;
+      lastPlayedFxId = fx.id;
+
+      playSingleFxEvent(fx);
+
+      if (fx.followUpFx) {
+        setTimeout(() => {
+          playSingleFxEvent(fx.followUpFx);
+        }, 1850);
       }
     }
 
@@ -3261,7 +3792,7 @@
           actor.coins += 1;
           gameState.treasury = Math.max(0, gameState.treasury - 1);
           addLog(`🪙 ${actor.name} takes Income (+1).`);
-          emitTableFx('COINS_GAIN', { actorId: actor.id, actorName: actor.name, amount: 1 });
+          emitTableFx('INCOME_GAIN', { actorId: actor.id, actorName: actor.name, amount: 1 });
           advanceToNextTurn();
           return;
         }
@@ -3670,6 +4201,22 @@
       syncStateToAll();
     }
 
+    function emitOrChainTableFx(type, payload, preserveFx) {
+      if (preserveFx && gameState.tableFx) {
+        gameState.tableFx.followUpFx = {
+          type,
+          actorId: payload.actorId || null,
+          actorName: payload.actorName || '',
+          targetId: payload.targetId || null,
+          targetName: payload.targetName || '',
+          reason: payload.reason || '',
+          amount: payload.amount || 0
+        };
+      } else {
+        emitTableFx(type, payload);
+      }
+    }
+
     function executeUnblockedAction(preserveFx = false) {
       const pa = gameState.pendingAction;
       if (!pa) return advanceToNextTurn();
@@ -3681,13 +4228,13 @@
         actor.coins += 2;
         gameState.treasury = Math.max(0, gameState.treasury - 2);
         addLog(`💰 ${actor.name} takes Foreign Aid (+2).`);
-        if (!preserveFx) emitTableFx('COINS_GAIN', { actorId: actor.id, actorName: actor.name, amount: 2 });
+        emitOrChainTableFx('FOREIGN_AID_GAIN', { actorId: actor.id, actorName: actor.name, amount: 2 }, preserveFx);
         advanceToNextTurn();
       } else if (pa.type === 'TAX') {
         actor.coins += 3;
         gameState.treasury = Math.max(0, gameState.treasury - 3);
         addLog(`🟣 ${actor.name} collects Tax (+3).`);
-        if (!preserveFx) emitTableFx('COINS_GAIN', { actorId: actor.id, actorName: actor.name, amount: 3 });
+        emitOrChainTableFx('DUKE_TAX', { actorId: actor.id, actorName: actor.name, amount: 3 }, preserveFx);
         advanceToNextTurn();
       } else if (pa.type === 'STEAL') {
         if (target && target.alive) {
@@ -3695,15 +4242,13 @@
           target.coins -= stolen;
           actor.coins += stolen;
           addLog(`🔵 ${actor.name} steals ${stolen} Coin(s) from ${target.name}!`);
-          if (!preserveFx) {
-            emitTableFx('STEAL', {
-              actorId: actor.id,
-              actorName: actor.name,
-              targetId: target.id,
-              targetName: target.name,
-              amount: stolen
-            });
-          }
+          emitOrChainTableFx('CAPTAIN_STEAL', {
+            actorId: actor.id,
+            actorName: actor.name,
+            targetId: target.id,
+            targetName: target.name,
+            amount: stolen
+          }, preserveFx);
         }
         advanceToNextTurn();
       } else if (pa.type === 'ASSASSINATE') {
@@ -3723,6 +4268,11 @@
         });
         oldRoles.forEach(r => putCardInBottom(r));
         addLog(`🟢 ${actor.name} swapped their card(s) with the top of the Court Deck and placed the old ones on the bottom.`);
+        emitOrChainTableFx('EXCHANGE_SWAP', {
+          actorId: actor.id,
+          actorName: actor.name,
+          amount: oldRoles.length
+        }, preserveFx);
         advanceToNextTurn();
       }
     }
