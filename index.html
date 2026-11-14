@@ -696,15 +696,119 @@
       animation: urgentPulse 1.1s ease-in-out infinite alternate;
     }
 
+    /* SIDE-BY-SIDE TABLETOP ROW: MY CARDS (LEFT) + SCATTERED COINS BOX (RIGHT) */
+    .my-tabletop-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.38fr) minmax(120px, 1fr);
+      gap: 0.65rem;
+      align-items: stretch;
+      width: 100%;
+      margin: 0.18rem auto;
+      flex-shrink: 0;
+    }
+
     .cards-row {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 166px));
+      grid-template-columns: repeat(2, minmax(0, 148px));
       justify-content: center;
-      gap: 0.8rem;
+      gap: 0.55rem;
       flex-shrink: 0;
-      margin: 0.18rem auto;
       width: 100%;
       animation: slideDownFade 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* TABLETOP SCATTERED COINS BOX (ACTUAL COINS SCATTERED, NO NUMBER) */
+    .coins-scatter-box {
+      position: relative;
+      border-radius: 12px;
+      border: 2px solid rgba(229, 184, 75, 0.55);
+      background:
+        radial-gradient(circle at 50% 45%, rgba(245, 158, 11, 0.14) 0%, rgba(15, 21, 35, 0.94) 68%),
+        linear-gradient(180deg, rgba(18, 24, 38, 0.96) 0%, rgba(9, 12, 20, 0.99) 100%);
+      box-shadow:
+        inset 0 0 22px rgba(0, 0, 0, 0.85),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 10px 24px rgba(0, 0, 0, 0.68);
+      min-height: 158px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 0.4rem;
+    }
+
+    .coins-scatter-box-header {
+      position: relative;
+      z-index: 2;
+      font-family: 'Cinzel', serif;
+      font-size: 0.66rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #fde68a;
+      text-align: center;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+      border-bottom: 1px solid rgba(229, 184, 75, 0.22);
+      padding-bottom: 0.22rem;
+      pointer-events: none;
+    }
+
+    .coins-scatter-field {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      min-height: 118px;
+    }
+
+    .coins-scatter-empty {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: rgba(148, 163, 184, 0.42);
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    .scattered-coin-token {
+      position: absolute;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 32% 28%, #fef9c3 0%, #facc15 38%, #d97706 78%, #78350f 100%);
+      border: 2px solid #fef08a;
+      box-shadow:
+        0 5px 11px rgba(0, 0, 0, 0.78),
+        inset 0 2px 4px rgba(255, 255, 255, 0.8),
+        inset 0 -2px 4px rgba(120, 53, 15, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: translate(-50%, -50%) rotate(var(--coin-rot, 0deg));
+      transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+      user-select: none;
+    }
+
+    .scattered-coin-token::before {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      border: 1px dashed rgba(120, 53, 15, 0.65);
+      pointer-events: none;
+    }
+
+    .scattered-coin-token::after {
+      content: '⚜';
+      font-size: 0.88rem;
+      color: #78350f;
+      text-shadow: 0 1px 0 rgba(254, 249, 195, 0.75);
+      line-height: 1;
     }
 
     /* FULL VERTICAL PORTRAIT CARDS (5:7 RATIO, UNCROPPED) */
@@ -712,7 +816,7 @@
       border-radius: 12px;
       aspect-ratio: 5 / 7;
       width: 100%;
-      max-height: 232px;
+      max-height: 214px;
       border: 2px solid rgba(229, 184, 75, 0.6);
       position: relative;
       overflow: hidden;
@@ -724,6 +828,11 @@
       box-shadow: 0 10px 26px rgba(0, 0, 0, 0.72);
       transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease;
       will-change: transform;
+    }
+
+    .influence-card.face-down-card {
+      border-color: rgba(148, 163, 184, 0.55);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.78);
     }
 
     .influence-card.selectable {
@@ -765,21 +874,50 @@
       position: relative;
       z-index: 2;
       background: linear-gradient(to top, rgba(7, 9, 14, 0.98) 48%, rgba(7, 9, 14, 0.82) 85%, transparent);
-      padding: 0.42rem 0.35rem 0.32rem;
+      padding: 0.38rem 0.3rem 0.28rem;
       text-align: center;
     }
 
     .card-role-name {
       font-family: 'Cinzel', serif;
       font-weight: 900;
-      font-size: 0.86rem;
-      letter-spacing: 0.05em;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
     }
 
     .card-role-sub {
-      font-size: 0.7rem;
+      font-size: 0.66rem;
       color: #f1f5f9;
       font-weight: 700;
+    }
+
+    @media (max-width: 680px) {
+      .my-tabletop-row {
+        grid-template-columns: minmax(0, 1.32fr) minmax(108px, 1fr);
+        gap: 0.45rem;
+      }
+
+      .cards-row {
+        gap: 0.4rem;
+      }
+
+      .influence-card {
+        max-height: 178px;
+      }
+
+      .coins-scatter-box {
+        min-height: 138px;
+        padding: 0.32rem;
+      }
+
+      .scattered-coin-token {
+        width: 28px;
+        height: 28px;
+      }
+
+      .scattered-coin-token::after {
+        font-size: 0.74rem;
+      }
     }
 
     /* ================= MODERN CARD-GAME COMMAND DECK & ACTION TILES ================= */
@@ -1972,6 +2110,128 @@
       82% { opacity: 1; transform: translate3d(var(--card-offset-x, 0px), 62px, 0) scale(1) rotate(var(--card-rot, 0deg)); }
       100% { opacity: 0; transform: translate3d(var(--card-offset-x, 0px), 76px, 0) scale(0.92) rotate(var(--card-rot, 0deg)); }
     }
+
+    /* ================= BLUFF LOSS CARD EXPLOSION CENTERPIECE ================= */
+    .fx-explodable-card {
+      position: relative;
+      width: clamp(128px, 28vw, 156px);
+      height: clamp(178px, 39vw, 218px);
+      z-index: 5;
+      animation: cardPreExplodeShake 0.52s ease-in-out;
+    }
+
+    .fx-card-shard {
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      border: 2px solid #f59e0b;
+      background: #0d111a;
+      overflow: hidden;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.88);
+      will-change: transform, opacity;
+    }
+
+    .fx-card-shard img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .fx-card-shard.shard-0 { clip-path: polygon(0% 0%, 58% 0%, 48% 38%, 0% 32%); }
+    .fx-card-shard.shard-1 { clip-path: polygon(58% 0%, 100% 0%, 100% 36%, 48% 38%); }
+    .fx-card-shard.shard-2 { clip-path: polygon(0% 32%, 48% 38%, 54% 68%, 0% 72%); }
+    .fx-card-shard.shard-3 { clip-path: polygon(48% 38%, 100% 36%, 100% 70%, 54% 68%); }
+    .fx-card-shard.shard-4 { clip-path: polygon(0% 72%, 54% 68%, 46% 100%, 0% 100%); }
+    .fx-card-shard.shard-5 { clip-path: polygon(54% 68%, 100% 70%, 100% 100%, 46% 100%); }
+
+    .fx-explodable-card.exploded-now .fx-card-shard {
+      animation: cardShardBlastOut 1.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .fx-explosion-core {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 170px;
+      height: 170px;
+      margin-left: -85px;
+      margin-top: -85px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff 0%, #fef08a 26%, #f97316 58%, rgba(225, 29, 72, 0) 76%);
+      z-index: 8;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.2);
+    }
+
+    .fx-explodable-card.exploded-now .fx-explosion-core {
+      animation: explosionCoreFlash 0.82s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .fx-explosion-wave {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 150px;
+      height: 150px;
+      margin-left: -75px;
+      margin-top: -75px;
+      border-radius: 50%;
+      border: 4px solid #fbbf24;
+      box-shadow: 0 0 28px #f43f5e, inset 0 0 20px #f59e0b;
+      z-index: 7;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.3);
+    }
+
+    .fx-explodable-card.exploded-now .fx-explosion-wave {
+      animation: explosionShockwaveRing 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes cardPreExplodeShake {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      20% { transform: translate3d(-6px, 3px, 0) rotate(-3deg) scale(1.03); }
+      40% { transform: translate3d(6px, -4px, 0) rotate(3deg) scale(1.05); }
+      60% { transform: translate3d(-7px, -3px, 0) rotate(-4deg) scale(1.07); }
+      80% { transform: translate3d(7px, 4px, 0) rotate(4deg) scale(1.09); }
+    }
+
+    @keyframes cardShardBlastOut {
+      0% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+        filter: brightness(2.1);
+      }
+      18% {
+        opacity: 1;
+        transform: translate3d(calc(var(--tx, 80px) * 0.48), calc(var(--ty, -80px) * 0.48), 0) rotate(calc(var(--rot, 45deg) * 0.55)) scale(0.96);
+        filter: brightness(1.45);
+      }
+      76% {
+        opacity: 0.96;
+        transform: translate3d(calc(var(--tx, 80px) * 0.88), calc(var(--ty, -80px) * 0.88), 0) rotate(calc(var(--rot, 45deg) * 0.9)) scale(0.84);
+        filter: brightness(1.1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(var(--tx, 80px), var(--ty, -80px), 0) rotate(var(--rot, 45deg)) scale(0.5);
+        filter: brightness(0.85);
+      }
+    }
+
+    @keyframes explosionCoreFlash {
+      0% { opacity: 1; transform: scale(0.35); }
+      35% { opacity: 0.95; transform: scale(1.45); }
+      75% { opacity: 0.65; transform: scale(1.8); }
+      100% { opacity: 0; transform: scale(2.15); }
+    }
+
+    @keyframes explosionShockwaveRing {
+      0% { opacity: 1; transform: scale(0.35); }
+      70% { opacity: 0.85; transform: scale(1.95); }
+      100% { opacity: 0; transform: scale(2.45); }
+    }
   </style>
 </head>
 
@@ -2120,13 +2380,16 @@
       <!-- Compact Player List (Larger Coins & Card Counts) -->
       <div id="compactSeatsGrid"></div>
 
-      <!-- Modern Vault Peek Button for My Cards (With Anti-Peek Layer for Coup/Loss) -->
+      <!-- Modern Vault Peek Button for My Cards (Reveals Face-Down Cards & Hides on Second Click) -->
       <button id="bigPeekBtn" class="btn" onclick="toggleCardPrivacy()">
-        🙈 SECRET CARDS HIDDEN (TAP TO PEEK)
+        🙈 REVEAL MY FACE-DOWN CARDS
       </button>
 
-      <!-- My Dedicated Full Vertical Card Area (Collapsible) -->
-      <div id="myCardsArea" class="cards-row" style="display:none;"></div>
+      <!-- Side-by-Side Tabletop Area: My Cards (Always Visible, Face-Down by Default) + My Scattered Coins Box -->
+      <div id="myTabletopRow" class="my-tabletop-row">
+        <div id="myCardsArea" class="cards-row"></div>
+        <div id="myCoinsScatterBox" class="coins-scatter-box"></div>
+      </div>
 
       <!-- Modern Card-Game Turn Actions & 2x2 Character Claims Deck -->
       <div id="commandPanelBox" class="command-panel">
@@ -2984,9 +3247,106 @@
       setTimeout(() => stage.remove(), 2260);
     }
 
+    /*
+     * 5. BLUFF / CHALLENGE CARD EXPLOSION CENTERPIECE ANIMATION
+     * When a player is caught bluffing or loses a bluff challenge, their face-down card
+     * is placed in the center stage and EXPLODES into 6 fragments instead of being sliced!
+     */
+    function spawnCenterpieceCardExplosionAnimation(fx) {
+      const layer = document.getElementById('tableFxLayer');
+      if (!layer) return;
+      clearExistingStages();
+
+      playSfx('coup');
+      spawnScreenFlash('radial-gradient(circle, rgba(249, 115, 22, 0.5) 0%, rgba(225, 29, 72, 0.38) 48%, transparent 78%)');
+
+      const headerTitle = `💥 BLUFF EXPLOSION!`;
+      const subText = fx.actorName && fx.actorName !== fx.targetName
+        ? `${fx.actorName} vs ${fx.targetName} — ${fx.targetName}'s Card Explodes!`
+        : `${fx.targetName}'s Card Explodes from Bluff Challenge!`;
+
+      const shardVectors = [
+        { tx: '-115px', ty: '-95px', rot: '-48deg' },
+        { tx: '118px', ty: '-92px', rot: '52deg' },
+        { tx: '-135px', ty: '8px', rot: '-64deg' },
+        { tx: '135px', ty: '12px', rot: '62deg' },
+        { tx: '-98px', ty: '108px', rot: '-38deg' },
+        { tx: '104px', ty: '112px', rot: '44deg' }
+      ];
+
+      let shardsHtml = '';
+      shardVectors.forEach((vec, idx) => {
+        shardsHtml += `
+          <div class="fx-card-shard shard-${idx}" style="--tx:${vec.tx}; --ty:${vec.ty}; --rot:${vec.rot};">
+            <img src="${getCardImageSrc('Hidden')}" alt="Card Back" onerror="handleImageFallback(this, 'Hidden')" />
+          </div>
+        `;
+      });
+
+      const stage = document.createElement('div');
+      stage.className = 'fx-center-stage';
+      stage.innerHTML = `
+        <div class="fx-stage-header">
+          <div class="fx-stage-title" style="color:#fb923c;">${escapeHtml(headerTitle)}</div>
+          <div class="fx-stage-sub">${escapeHtml(subText)}</div>
+        </div>
+        <div class="fx-card-arena">
+          <div class="fx-explodable-card" id="centerExplodableCard">
+            ${shardsHtml}
+            <div class="fx-explosion-wave"></div>
+            <div class="fx-explosion-core"></div>
+          </div>
+        </div>
+        <div class="fx-stage-footer">💥 CAUGHT IN BLUFF • SECRET CARD SHATTERED TO COURT DECK</div>
+      `;
+
+      layer.appendChild(stage);
+
+      // Trigger the outward shard explosion right after the pre-explosion shake
+      setTimeout(() => {
+        const cardEl = stage.querySelector('#centerExplodableCard');
+        if (cardEl) {
+          cardEl.classList.add('exploded-now');
+        }
+
+        const mainEl = document.getElementById('mainViewport');
+        if (mainEl) {
+          mainEl.classList.remove('screen-shake-coup');
+          void mainEl.offsetWidth;
+          mainEl.classList.add('screen-shake-coup');
+        }
+
+        if (fx.targetId) {
+          const tPos = getPodCenter(fx.targetId);
+          if (tPos.el) {
+            tPos.el.classList.remove('pod-hit-flash');
+            void tPos.el.offsetWidth;
+            tPos.el.classList.add('pod-hit-flash');
+          }
+        }
+      }, 480);
+
+      // Pop the Court Deck counter when the exploded card returns to Deck Bottom
+      setTimeout(() => {
+        const deckEl = getElementCenter('courtDeckBadgeBox').el;
+        if (deckEl) {
+          deckEl.classList.remove('stat-pop');
+          void deckEl.offsetWidth;
+          deckEl.classList.add('stat-pop');
+        }
+      }, 1650);
+
+      setTimeout(() => {
+        stage.remove();
+      }, 2280);
+    }
+
     function playSingleFxEvent(fx) {
       if (!fx) return;
-      if (fx.type === 'COUP_SLICE' || fx.type === 'ASSASSINATE_SLICE' || fx.type === 'CHALLENGE_SLICE') {
+      if (fx.type === 'CHALLENGE_SLICE') {
+        clearExistingStages();
+        spawnCenterpieceCardExplosionAnimation(fx);
+      } else if (fx.type === 'COUP_SLICE' || fx.type === 'ASSASSINATE_SLICE') {
         clearExistingStages();
         spawnCenterpieceCoinSliceAnimation(fx.type, fx);
       } else if (fx.type === 'DUKE_TAX' || fx.type === 'FOREIGN_AID_GAIN' || fx.type === 'INCOME_GAIN' || fx.type === 'COINS_GAIN') {
@@ -4543,26 +4903,23 @@
       peekBtn.classList.toggle('loss-alert-peek', mustPickToLose && hideMyCards);
 
       if (mustPickToLose && hideMyCards) {
-        peekBtn.innerHTML = '🛡️ YOU MUST DUMP 1 CARD — TAP TO SEE YOUR CARDS FIRST (PRIVACY SHIELD)';
+        peekBtn.innerHTML = '🛡️ YOU MUST DUMP 1 CARD — TAP TO REVEAL YOUR FACE-DOWN CARDS FIRST';
       } else if (mustPickToLose && !hideMyCards) {
-        peekBtn.innerHTML = '⬇️ TAP ONE OF YOUR VERTICAL CARDS BELOW TO DUMP IT (OR TAP HERE TO HIDE)';
+        peekBtn.innerHTML = '⬇️ TAP ONE OF YOUR CARDS BELOW TO DUMP IT (OR TAP HERE TO HIDE FACE-DOWN)';
         peekBtn.style.borderColor = '#f43f5e';
         peekBtn.style.background = 'rgba(225, 29, 72, 0.2)';
         peekBtn.style.color = '#fda4af';
       } else {
-        peekBtn.innerHTML = hideMyCards ? '🙈 SECRET CARDS HIDDEN (TAP TO PEEK)' : '👀 HIDE MY CARDS';
+        peekBtn.innerHTML = hideMyCards ? '🙈 REVEAL MY FACE-DOWN CARDS' : '👀 HIDE MY CARDS (FLIP FACE-DOWN)';
         peekBtn.style.borderColor = hideMyCards ? '#3b82f6' : '#f59e0b';
         peekBtn.style.background = hideMyCards ? '#1e293b' : 'rgba(245, 158, 11, 0.15)';
         peekBtn.style.color = hideMyCards ? '#fff' : '#fbbf24';
       }
 
       const myCardsArea = document.getElementById('myCardsArea');
-      if (hideMyCards) {
-        myCardsArea.style.display = 'none';
-      } else {
-        myCardsArea.style.display = 'grid';
-        renderMyCards(me, mustPickToLose);
-      }
+      myCardsArea.style.display = 'grid';
+      renderMyCards(me, mustPickToLose);
+      renderMyScatteredCoins(me);
 
       renderProofBanner();
       renderPhaseBanner(me);
@@ -4649,6 +5006,25 @@
           return;
         }
 
+        if (hideMyCards) {
+          area.innerHTML += `
+            <div class="influence-card face-down-card ${mustPickToLose ? 'selectable' : ''}"
+                 onclick="toggleCardPrivacy()"
+                 title="Tap button or card to reveal">
+              <img class="card-art" src="${getCardImageSrc('Hidden')}" alt="Face Down Card" onerror="handleImageFallback(this, 'Hidden')" />
+              <div class="card-label-bar">
+                <div class="card-role-name" style="color:#94a3b8;">
+                  🔒 FACE DOWN
+                </div>
+                <div class="card-role-sub">
+                  ${mustPickToLose ? 'Tap to Reveal & Dump' : 'Secret Card'}
+                </div>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
         const roleMeta = ROLES[card.role];
         area.innerHTML += `
           <div class="influence-card ${mustPickToLose ? 'selectable' : ''}"
@@ -4659,12 +5035,59 @@
                 ${card.role.toUpperCase()}
               </div>
               <div class="card-role-sub">
-                ${mustPickToLose ? '⬇️ Tap to Dump Card' : 'Secret Card'}
+                ${mustPickToLose ? '⬇️ Tap to Dump Card' : 'Revealed Card'}
               </div>
             </div>
           </div>
         `;
       });
+    }
+
+    let prevMyScatteredCoinCount = null;
+    function renderMyScatteredCoins(me) {
+      const box = document.getElementById('myCoinsScatterBox');
+      if (!box) return;
+
+      const coinCount = Math.max(0, Number(me.coins) || 0);
+      const changed = prevMyScatteredCoinCount !== null && prevMyScatteredCoinCount !== coinCount;
+      prevMyScatteredCoinCount = coinCount;
+
+      // Deterministic organic scatter coordinates (x%, y%, rotation) so coins look naturally scattered across the box
+      const scatterSlots = [
+        { x: 26, y: 32, rot: -14 },
+        { x: 68, y: 28, rot: 18 },
+        { x: 48, y: 56, rot: -8 },
+        { x: 24, y: 74, rot: 22 },
+        { x: 74, y: 70, rot: -19 },
+        { x: 46, y: 24, rot: 11 },
+        { x: 34, y: 50, rot: -25 },
+        { x: 64, y: 48, rot: 15 },
+        { x: 52, y: 78, rot: -12 },
+        { x: 18, y: 52, rot: 28 },
+        { x: 82, y: 46, rot: -21 },
+        { x: 38, y: 36, rot: 9 },
+        { x: 60, y: 64, rot: -16 },
+        { x: 28, y: 62, rot: 19 },
+        { x: 72, y: 36, rot: -11 },
+        { x: 56, y: 38, rot: 24 }
+      ];
+
+      let coinsHtml = '';
+      for (let i = 0; i < coinCount; i++) {
+        const slot = scatterSlots[i % scatterSlots.length];
+        const layerOffset = Math.floor(i / scatterSlots.length) * 5;
+        const x = Math.min(86, Math.max(14, slot.x + (i % 2 === 0 ? layerOffset : -layerOffset)));
+        const y = Math.min(84, Math.max(18, slot.y + (i % 3 === 0 ? layerOffset : -layerOffset)));
+        const rot = slot.rot + (i * 7) % 15;
+        coinsHtml += `<div class="scattered-coin-token ${changed ? 'stat-pop' : ''}" style="left:${x}%; top:${y}%; --coin-rot:${rot}deg; z-index:${i + 2};"></div>`;
+      }
+
+      box.innerHTML = `
+        <div class="coins-scatter-box-header">🪙 MY TREASURY STASH</div>
+        <div class="coins-scatter-field">
+          ${coinCount === 0 ? '<div class="coins-scatter-empty">Empty Pouch</div>' : coinsHtml}
+        </div>
+      `;
     }
 
     function selectCardToLose(cardIndex) {
